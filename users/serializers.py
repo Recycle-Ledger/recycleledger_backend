@@ -5,7 +5,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 User=get_user_model() #커스텀 유저 가져옴 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.Serializer):
     wallet_addr=serializers.CharField(required=True,max_length=50)
     business_num=serializers.CharField(required=True,max_length=20)
     password = serializers.CharField(required=True)
@@ -15,6 +15,7 @@ class UserSerializer(serializers.ModelSerializer):
             data["wallet_addr"]
             and User.objects.filter(wallet_addr=data["wallet_addr"]).exists()
         ):
+            
             raise serializers.ValidationError("이미 등록된 전자 지갑 주소입니다.")
         if (
             data["business_num"]
@@ -24,7 +25,7 @@ class UserSerializer(serializers.ModelSerializer):
         
         return data
     
-    def create(self,validated_data):
+    def create(self,validated_data): # view에서 serializer save함수 호출하면 create 또는 perform_create(생성) 가 호출됨 
         user = User.objects.create(
             wallet_addr=validated_data["wallet_addr"],
             business_num=validated_data["business_num"],
@@ -32,7 +33,7 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(validated_data["password"])
         user.save()
         refresh=RefreshToken.for_user(user)
-        return {"refresh":str(refresh),"access":str(refresh.access_token)}
+        return {"refresh":str(refresh),"access":str(refresh.access_token)} #회원가입시 바로 access토큰 refresh 토큰 생성후 리턴
     
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self,attrs):
@@ -41,6 +42,6 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         data["refresh"]=str(refresh)
         data["access"]=str(refresh.access_token)
         
-        data["wallet_addr"]=self.user.wallet_adddr
+        data["wallet_addr"]=self.user.wallet_addr
         data["business_num"]=self.user.business_num
         return data

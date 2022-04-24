@@ -10,7 +10,7 @@ from .serializers import *
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def user_signup(request):
-    serializer=UserSerializer(dat=request.data)
+    serializer=UserSerializer(data=request.data)
     if serializer.is_valid(): #UserSerializer에 validate
         token = serializer.save()
         return Response(token,status=status.HTTP_201_CREATED)

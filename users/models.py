@@ -22,6 +22,7 @@ class UserManager(BaseUserManager):
         user.set_password(password) # set_password 함수 : 회원가입시 받은 비밀번호 hash하여 저장 
         user.save(using=self._db) # settings에 db중 기본 db 사용한다는 의미
         return user
+    
     def create_superuser(self,wallet_addr,business_num,password): # superuser 생성 함수 
         user = self.create_user(
             wallet_addr=wallet_addr,
@@ -40,9 +41,9 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser,PermissionsMixin):
     
     # id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False) 
-    wallet_addr=models.CharField(verbose_name="전자지갑주소", max_length=50,unique=True,null=False)
+    wallet_addr=models.CharField(verbose_name="전자지갑주소", max_length=50,unique=True)
     # 전자지갑주소는 34자리로구성됨
-    business_num=models.CharField(verbose_name="사업자등록번호", max_length=20,unique=True,null=False)
+    business_num=models.CharField(verbose_name="사업자등록번호", max_length=20,unique=True)
     # 사업자등록번호는 10자리로 구성됨
     
     objects = UserManager()
