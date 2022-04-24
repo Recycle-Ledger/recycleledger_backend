@@ -1,4 +1,3 @@
-from numpy import require
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -9,7 +8,7 @@ User=get_user_model() #커스텀 유저 가져옴
 class UserSerializer(serializers.ModelSerializer):
     wallet_addr=serializers.CharField(required=True,max_length=50)
     business_num=serializers.CharField(required=True,max_length=20)
-    password = serializers.CharField(reuqired=True)
+    password = serializers.CharField(required=True)
     
     def validate(self,data): #validate_필드명(self,value):로 하면 해당 필드만 검사, validate는 다수 필드 검사 
         if (

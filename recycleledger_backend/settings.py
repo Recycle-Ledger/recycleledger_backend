@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 
 import os,json
 from django.core.exceptions import ImproperlyConfigured
-import timedelta
+from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -126,8 +126,16 @@ WSGI_APPLICATION = 'recycleledger_backend.wsgi.application'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 
+# DATABASES = {
+#     "default": get_secret("default")
+# }
+
+# test용 local db
 DATABASES = {
-    "default": get_secret("default")
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
 }
 
 
