@@ -66,22 +66,7 @@ class User(AbstractBaseUser,PermissionsMixin):
     USERNAME_FIELD="phone_num" #고유식별자
     REQUIRED_FIELD=["phone_num","username"] #필수적 요구 필드 
 
-
-    # class Meta:
-    #     verbose_name = _("user")
-    #     verbose_name_plural = _("users")
-    #     ordering = ("-date_joined",)
-
-    # def __str__(self):
-    #     return self.username
-
-    # def get_full_name(self):
-    #     return self.nickname
-
-    # def get_short_name(self):
-    #     return self.nickname
-
     def __str__(self):
-        return self.phone_num   #pk로 두자- 뇌피셜
+        return self.phone_num  
     
 #verbose_name : 설정해두면 verbose_name 출력하면 설정값이 나옴
