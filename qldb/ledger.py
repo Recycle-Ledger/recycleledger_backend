@@ -1,15 +1,14 @@
 class Constants:
     
-    LEDGER_NAME = "vehicle-registration"
-    VEHICLE_REGISTRATION_TABLE_NAME = "VehicleRegistration"
-    VEHICLE_TABLE_NAME = "Vehicle"
-    PERSON_TABLE_NAME = "Person"
-    DRIVERS_LICENSE_TABLE_NAME = "DriversLicense"
-    LICENSE_NUMBER_INDEX_NAME = "LicenseNumber"
-    GOV_ID_INDEX_NAME = "GovId"
-    VEHICLE_VIN_INDEX_NAME = "VIN"
-    LICENSE_PLATE_NUMBER_INDEX_NAME = "LicensePlateNumber"
-    PERSON_ID_INDEX_NAME = "PersonId"
+    LEDGER_NAME = "recycleleger-backend"
+    USER_TABLE_NAME = "Person"
+    IMAGE_TABLE_NAME = "Image"
+
+    IMAGE_ADDRESS_INDEX_NAME = "ImageAddress"
+    WALLET_ADDRESS_INDEX_NAME = "WalletAddress"
+    BUSINESS_NUMBER_INDEX_NAME = "BusinessNumber"
+    USERNAME_INDEX_NAME = "Username"
+    PHONE_NUMBER_INDEX_NAME = "PhoneNumber"
 
     # JOURNAL_EXPORT_S3_BUCKET_NAME_PREFIX = "qldb-tutorial-journal-export"
     # USER_TABLES = "information_schema.user_tables"

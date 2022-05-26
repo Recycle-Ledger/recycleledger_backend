@@ -1,3 +1,4 @@
+from lib2to3.pgen2.driver import Driver
 from rest_framework.decorators import api_view
 from rest_framework import status #응답코드용 
 from rest_framework.response import Response
@@ -10,8 +11,15 @@ from qldb.ledger import *
 from botocore.exceptions import ClientError
 from pyqldb.driver.qldb_driver import QldbDriver
 
+from qldb.sample_data import *
+from amazon.ion.simple_types import IonPyBool, IonPyBytes, IonPyDecimal, IonPyDict, IonPyFloat, IonPyInt, IonPyList, \
+    IonPyNull, IonPySymbol, IonPyText, IonPyTimestamp
+from amazon.ion.simpleion import dumps, loads
+
 logger = getLogger(__name__)
 basicConfig(level=INFO)
+IonValue = (IonPyBool, IonPyBytes, IonPyDecimal, IonPyDict, IonPyFloat, IonPyInt, IonPyList, IonPyNull, IonPySymbol,
+            IonPyText, IonPyTimestamp)
 
 ledger_name=Constants.LEDGER_NAME
 
@@ -92,18 +100,15 @@ def create_qldb_table(driver, table_name):
 @api_view(['POST'])
 def create_table(request):
     try: 
-        create_qldb_table(qldb_driver, Constants.DRIVERS_LICENSE_TABLE_NAME)
-        create_qldb_table(qldb_driver, Constants.PERSON_TABLE_NAME)
-        create_qldb_table(qldb_driver, Constants.VEHICLE_TABLE_NAME)
-        create_qldb_table(qldb_driver, Constants.VEHICLE_REGISTRATION_TABLE_NAME)
+        create_qldb_table(qldb_driver, Constants.USER_TABLE_NAME)
+        create_qldb_table(qldb_driver, Constants.IMAGE_TABLE_NAME)
         logger.info('Tables created successfully.')
     except Exception as e:
         logger.exception('Errors creating tables.')
         raise e
     return Response(status=status.HTTP_201_CREATED)
     
-    
-    
+
 def create_table_index(driver, table_name, index_attribute):
     
     logger.info("Creating index on '{}'...".format(index_attribute))
@@ -115,21 +120,44 @@ def create_table_index(driver, table_name, index_attribute):
 def create_index(request):
     logger.info('Creating indexes on all tables...')
     try:
-        create_table_index(qldb_driver, Constants.PERSON_TABLE_NAME, Constants.GOV_ID_INDEX_NAME)
-        create_table_index(qldb_driver, Constants.VEHICLE_TABLE_NAME, Constants.VEHICLE_VIN_INDEX_NAME)
-        create_table_index(qldb_driver, Constants.VEHICLE_REGISTRATION_TABLE_NAME, Constants.LICENSE_PLATE_NUMBER_INDEX_NAME)
-        create_table_index(qldb_driver, Constants.VEHICLE_REGISTRATION_TABLE_NAME, Constants.VEHICLE_VIN_INDEX_NAME)
-        create_table_index(qldb_driver, Constants.DRIVERS_LICENSE_TABLE_NAME, Constants.PERSON_ID_INDEX_NAME)
-        create_table_index(qldb_driver, Constants.DRIVERS_LICENSE_TABLE_NAME, Constants.LICENSE_NUMBER_INDEX_NAME)
+        create_table_index(qldb_driver, Constants.USER_TABLE_NAME, Constants.USERNAME_INDEX_NAME)
+        create_table_index(qldb_driver, Constants.USER_TABLE_NAME, Constants.WALLET_ADDRESS_INDEX_NAME)
+        create_table_index(qldb_driver, Constants.USER_TABLE_NAME, Constants.BUSINESS_NUMBER_INDEX_NAME)
+        create_table_index(qldb_driver, Constants.USER_TABLE_NAME, Constants.PHONE_NUMBER_INDEX_NAME)
+        create_table_index(qldb_driver, Constants.IMAGE_TABLE_NAME, Constants.IMAGE_ADDRESS_INDEX_NAME)
         logger.info('Indexes created successfully.')
     except Exception as e:
         logger.exception('Unable to create indexes.')
         raise e
     return Response(status=status.HTTP_201_CREATED)
-    
+
+def convert_object_to_ion(py_object):
+    ion_object = loads(dumps(py_object))
+    return ion_object
+
+def get_document_ids_from_dml_results(result):
+    ret_val = list(map(lambda x: x.get('documentId'), result))
+    return ret_val
+
+def insert_documents(driver, table_name, documents):
+    logger.info('Inserting some documents in the {} table...'.format(table_name))
+    statement = 'INSERT INTO {} ?'.format(table_name)
+    cursor = driver.execute_lambda(lambda executor: executor.execute_statement(statement,
+                                                                               convert_object_to_ion(documents)))
+    list_of_document_ids = get_document_ids_from_dml_results(cursor)
+
+    return list_of_document_ids
+
 @api_view(['POST'])
-def ck(request):
-    
-    for table in qldb_driver.list_tables():
-        print(table)
+def insert_document(request):
+    try:    
+        insert_documents(qldb_driver, Constants.USER_TABLE_NAME, SampleData.PERSON)
+        insert_documents(qldb_driver, Constants.IMAGE_TABLE_NAME, SampleData.IMAGE)
+        logger.info('Documents inserted successfully!')
+    except Exception as e:
+        logger.exception('Error inserting or updating documents.')
+        raise e
     return Response(status=status.HTTP_201_CREATED)
+
+
+    
