@@ -7,6 +7,6 @@ urlpatterns = [
     # path('create_driver', create_qldb_driver, name='create_driver'),
     path('create_table', create_table, name='create_table'),
     path('create_index', create_index, name='create_index'),
+    path('insert_document', insert_document, name='insert_document'),
     
-    path('ck', ck, name='ck'),
 ]
