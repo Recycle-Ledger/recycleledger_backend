@@ -11,7 +11,6 @@ from qldb.ledger import *
 from botocore.exceptions import ClientError
 from pyqldb.driver.qldb_driver import QldbDriver
 
-from qldb.sample_data import *
 from amazon.ion.simple_types import IonPyBool, IonPyBytes, IonPyDecimal, IonPyDict, IonPyFloat, IonPyInt, IonPyList, \
     IonPyNull, IonPySymbol, IonPyText, IonPyTimestamp
 from amazon.ion.simpleion import dumps, loads
@@ -153,26 +152,33 @@ def insert_documents(driver, table_name, documents):
     return list_of_document_ids
 
 @api_view(['POST'])
-def insert_document(request):
+def insert_first_info(request):
     body=json.loads(request.body)
-    
+    # print(body['track'])
+    # print(body['image'])
     try:    
-        insert_documents(qldb_driver, QLDB.TRACKING_TABLE_NAME, SampleData.PERSON)
-        insert_documents(qldb_driver, QLDB.IMAGE_TABLE_NAME, SampleData.IMAGE)
+        insert_documents(qldb_driver, QLDB.TRACKING_TABLE_NAME, body['track'])
+        insert_documents(qldb_driver, QLDB.IMAGE_TABLE_NAME, body['image'])
         logger.info('Documents inserted successfully!')
     except Exception as e:
         logger.exception('Error inserting or updating documents.')
         raise e
     return Response(status=status.HTTP_201_CREATED)
 
-
-
-# PERSON = [
-#         {
-#             "BusinessNumber": "1234598760",
-#             "PhoneNumber": "01099998888",
-#             "Username": "김명준",
-#             "WalletAddress": "1kl2j3b4l5kb34l5k6bh1345",
-#             "ValidFromDate": datetime(2022, 5, 26),
-#             "ValidToDate": datetime(2023, 9, 25)
-#         }]
+# 아래와 같이 전달해주면됨
+# {
+#     "track":{
+#         "DrainDate": "1234598760",
+#         "POName": "맘스터치",
+#         "Collector": "김명준",
+#         "QTY": "2",
+#         "KG": "1",
+#         "ValidFromDate": "datetime(2022, 5, 26)",
+#         "ValidToDate": "datetime(2023, 9, 25)"
+#     },
+#     "image":{
+#         "ImageHash":"123442",
+#         "ValidFromDate": "datetime(2022, 5, 26)",
+#         "ValidToDate": "datetime(2023, 9, 25)"
+#     }
+# }
