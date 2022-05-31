@@ -1,8 +1,8 @@
-from lib2to3.pgen2.driver import Driver
 from rest_framework.decorators import api_view
 from rest_framework import status #응답코드용 
 from rest_framework.response import Response
 from django.conf import settings
+import json
 import boto3
 # from boto3 import client
 from logging import basicConfig, getLogger, INFO
@@ -11,7 +11,6 @@ from qldb.ledger import *
 from botocore.exceptions import ClientError
 from pyqldb.driver.qldb_driver import QldbDriver
 
-from qldb.sample_data import *
 from amazon.ion.simple_types import IonPyBool, IonPyBytes, IonPyDecimal, IonPyDict, IonPyFloat, IonPyInt, IonPyList, \
     IonPyNull, IonPySymbol, IonPyText, IonPyTimestamp
 from amazon.ion.simpleion import dumps, loads
@@ -21,7 +20,7 @@ basicConfig(level=INFO)
 IonValue = (IonPyBool, IonPyBytes, IonPyDecimal, IonPyDict, IonPyFloat, IonPyInt, IonPyList, IonPyNull, IonPySymbol,
             IonPyText, IonPyTimestamp)
 
-ledger_name=Constants.LEDGER_NAME
+ledger_name=QLDB.LEDGER_NAME
 
 access_key=getattr(settings,'AWS_ACCESS_KEY_ID')
 secret_access_key=getattr(settings,'AWS_SECRET_ACCESS_KEY')
@@ -100,8 +99,8 @@ def create_qldb_table(driver, table_name):
 @api_view(['POST'])
 def create_table(request):
     try: 
-        create_qldb_table(qldb_driver, Constants.USER_TABLE_NAME)
-        create_qldb_table(qldb_driver, Constants.IMAGE_TABLE_NAME)
+        create_qldb_table(qldb_driver, QLDB.TRACKING_TABLE_NAME)
+        create_qldb_table(qldb_driver, QLDB.IMAGE_TABLE_NAME)
         logger.info('Tables created successfully.')
     except Exception as e:
         logger.exception('Errors creating tables.')
@@ -120,11 +119,15 @@ def create_table_index(driver, table_name, index_attribute):
 def create_index(request):
     logger.info('Creating indexes on all tables...')
     try:
-        create_table_index(qldb_driver, Constants.USER_TABLE_NAME, Constants.USERNAME_INDEX_NAME)
-        create_table_index(qldb_driver, Constants.USER_TABLE_NAME, Constants.WALLET_ADDRESS_INDEX_NAME)
-        create_table_index(qldb_driver, Constants.USER_TABLE_NAME, Constants.BUSINESS_NUMBER_INDEX_NAME)
-        create_table_index(qldb_driver, Constants.USER_TABLE_NAME, Constants.PHONE_NUMBER_INDEX_NAME)
-        create_table_index(qldb_driver, Constants.IMAGE_TABLE_NAME, Constants.IMAGE_ADDRESS_INDEX_NAME)
+        # 트래킹 테이블 구성
+        create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.DRAINDATE_INDEX_NAME)
+        create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.PO_NAME_INDEX_NAME)
+        # create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.ADDRESS_INDEX_NAME)
+        create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.COLLECTOR_INDEX_NAME)
+        create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.QTY_INDEX_NAME)
+        create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.KG_INDEX_NAME)
+        # 이미지 테이블 구성 
+        create_table_index(qldb_driver, QLDB.IMAGE_TABLE_NAME, QLDB.IMAGE_HASH_INDEX_NAME)
         logger.info('Indexes created successfully.')
     except Exception as e:
         logger.exception('Unable to create indexes.')
@@ -149,15 +152,33 @@ def insert_documents(driver, table_name, documents):
     return list_of_document_ids
 
 @api_view(['POST'])
-def insert_document(request):
+def insert_first_info(request):
+    body=json.loads(request.body)
+    # print(body['track'])
+    # print(body['image'])
     try:    
-        insert_documents(qldb_driver, Constants.USER_TABLE_NAME, SampleData.PERSON)
-        insert_documents(qldb_driver, Constants.IMAGE_TABLE_NAME, SampleData.IMAGE)
+        insert_documents(qldb_driver, QLDB.TRACKING_TABLE_NAME, body['track'])
+        insert_documents(qldb_driver, QLDB.IMAGE_TABLE_NAME, body['image'])
         logger.info('Documents inserted successfully!')
     except Exception as e:
         logger.exception('Error inserting or updating documents.')
         raise e
     return Response(status=status.HTTP_201_CREATED)
 
-
-    
+# 아래와 같이 전달해주면됨
+# {
+#     "track":{
+#         "DrainDate": "1234598760",
+#         "POName": "맘스터치",
+#         "Collector": "김명준",
+#         "QTY": "2",
+#         "KG": "1",
+#         "ValidFromDate": "datetime(2022, 5, 26)",
+#         "ValidToDate": "datetime(2023, 9, 25)"
+#     },
+#     "image":{
+#         "ImageHash":"123442",
+#         "ValidFromDate": "datetime(2022, 5, 26)",
+#         "ValidToDate": "datetime(2023, 9, 25)"
+#     }
+# }
