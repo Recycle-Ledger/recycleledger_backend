@@ -4,21 +4,19 @@ class QLDB:
     
     # 트래킹 테이블
     TRACKING_TABLE_NAME = "Tracking"
-    # 칼럼명
-    DRAINDATE_INDEX_NAME = "DrainDate" # 식당 배출날짜
-    PO_NAME_INDEX_NAME = "POName" #식당 상호명
-    # ADDRESS_INDEX_NAME = "Address" #식당 주소
-    COLLECTOR_INDEX_NAME = "Collector" # 중상, 좌상 콜렉터
-    QTY_INDEX_NAME = "QTY" # 식당, 중상 캔 개수
-    KG_INDEX_NAME = "KG" # 식당 중상 캔 무게
-    
-    # 이미지 테이블
     IMAGE_TABLE_NAME = "Image"
-    # 칼럼명
-    IMAGE_HASH_INDEX_NAME = "ImageHash"
+    PO_TABLE_NAME = "PO" #식당
     
-    
- 
+    TRACKING_ID_INDEX_NAME = "Tracking_id" # 트래킹 트랜잭션 id 
+    STATUS_INDEX_NAME = "Status" # type,from,to
+    CAN_INFO_INDEX_NAME = "Can_info" # 폐식용유 캔 INFO
+    IMAGE_ID_INDEX_NAME = "Image_id" # 이미지 해시값
+    PO_ID_INDEX_NAME = "PO_id" # 배출 식당 id
+    IMAGE_URL_INDEX_NAME = "Image_url" # 이미지 url
+
+    OPEN_STATUS_INDEX_NAME = "Open_status" # 영업 여부
+    PO_INFO_INDEX_NAME = "PO_info" # 식당 정보
+    DISCHARGE_DATE_INDEX_NAME = "Discharge_date" # 배출 일
 
     # JOURNAL_EXPORT_S3_BUCKET_NAME_PREFIX = "qldb-tutorial-journal-export"
     # USER_TABLES = "information_schema.user_tables"
