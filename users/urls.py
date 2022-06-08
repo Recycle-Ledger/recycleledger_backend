@@ -8,5 +8,6 @@ urlpatterns = [
     path('login',MyTokenObtainPairView.as_view(),name="login"),
     path('logout',TokenBlacklistView.as_view(),name="logout"),
     path('info_update',user_info_update,name="info_update"),
+    path('check',check,name="check"),
     # as_view는 클래스 진입 메소드 
 ]
