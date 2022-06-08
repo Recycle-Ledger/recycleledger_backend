@@ -16,9 +16,34 @@ class UserSerializer(serializers.ModelSerializer):
         user = User.objects.create(
             phone_num=validated_data["phone_num"],
             username=validated_data["username"],
-            wallet_addr=validated_data["wallet_addr"],
+            address=validated_data["address"],
             business_num=validated_data["business_num"],
+            account=validated_data["account"],
+            po_name=validated_data["po_name"],
+            job=validated_data["job"]
         )
+
+        # 사업자 등록번호 뒤에 이니셜 및 숫자 추가 부분
+         
+        if user.job=="중상":
+            alpha = "C"
+        elif user.job=="식당":
+            alpha = "P"
+        else:
+            alpha = "J"
+
+        a = len(User.objects.all())
+
+        if a<10:
+            alpha = alpha + str(a).zfill(3)
+        elif a<100:
+            alpha = alpha + str(a).zfill(2)
+        elif a<1000:
+            alpha = alpha + str(a).zfill(1)
+        else:
+            alpha = alpha + str(a)
+
+        user.business_num = user.business_num + alpha
         user.set_password(validated_data["password"]) #(SHA 256)를 통한 해시화
         user.save()
         refresh=RefreshToken.for_user(user)
@@ -28,8 +53,11 @@ class UserSerializer(serializers.ModelSerializer):
 
         instance.phone_num=validated_data.get('phone_num',instance.phone_num)
         instance.username=validated_data.get('username',instance.username)
-        instance.wallet_addr=validated_data.get('wallet_addr',instance.wallet_addr)
+        instance.address=validated_data.get('address',instance.address)
         instance.business_num=validated_data.get('business_num',instance.business_num)
+        instance.account=validated_data.get('account',instance.account)
+        instance.po_name=validated_data.get('po_name',instance.po_name)
+        instance.job=validated_data.get('job',instance.job)
         instance.set_password(validated_data.get('password',instance.password))
         instance.save()
         return instance

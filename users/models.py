@@ -10,7 +10,7 @@ from django.utils.translation import gettext_lazy as _
 # AbstractBaseUser : 상속받아 생성하는 클래스 
 
 class UserManager(BaseUserManager):
-    def create_user(self,phone_num,username,password): # user 생성 함수 
+    def create_user(self,phone_num,username,password,account,job): # user 생성 함수 
         
         if not phone_num:
             raise ValueError(_('핸드폰 번호는 필수'))
@@ -18,11 +18,14 @@ class UserManager(BaseUserManager):
             raise ValueError(_('사용자 이름은 필수'))
         if not password:
             raise ValueError(_('비밀번호는 필수'))
-        
+        if not account:
+            raise ValueError(_('계좌번호는 필수'))
+ 
         user=self.model(
             phone_num=phone_num,
             username=username,
-            # wallet_addr=wallet_addr #자동생성해야함 
+            account=account,
+            job=job
         ) 
         user.set_password(password) # set_password 함수 : 회원가입시 받은 비밀번호 hash하여 저장 
         user.save(using=self._db) # settings에 db중 기본 db 사용한다는 의미
@@ -48,11 +51,13 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser,PermissionsMixin):
     
     # id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False) 
-    
-    phone_num= models.CharField(verbose_name=_("핸드폰 번호"),unique=True,max_length=15)
-    username=models.CharField(verbose_name=_("사용자 이름"),max_length=20)
-    wallet_addr=models.CharField(verbose_name=_("전자지갑주소"), max_length=50,unique=True,null=True,blank=True)# 전자지갑주소는 34자리로구성됨
     business_num=models.CharField(verbose_name=_("사업자등록번호"), max_length=20,unique=True,null=True,blank=True)# 사업자등록번호는 10자리로 구성됨
+    phone_num= models.CharField(verbose_name=_("핸드폰 번호"),unique=True,max_length=15) # 전화번호(필수)
+    username=models.CharField(verbose_name=_("사용자 이름"),max_length=20) # 사용자 이름 (필수)
+    address=models.CharField(verbose_name=_("주소"), max_length=100,null=True,blank=True) # 주소
+    account=models.CharField(verbose_name=_("계좌번호"), max_length=100,unique=True) # 계좌번호(필수)
+    po_name=models.CharField(verbose_name=_("상호명"), max_length=50,null=True,blank=True) # 상호명
+    job=models.CharField(verbose_name=_("직업군"), max_length=50,null=True,blank=True) # 직업군 - 좌상,중상,식당 고르기
     
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
@@ -64,7 +69,7 @@ class User(AbstractBaseUser,PermissionsMixin):
     objects = UserManager()
     
     USERNAME_FIELD="phone_num" #고유식별자
-    REQUIRED_FIELD=["phone_num","username"] #필수적 요구 필드 
+    REQUIRED_FIELD=["phone_num","username","account","job"] #필수적 요구 필드 
 
     def __str__(self):
         return self.phone_num  
