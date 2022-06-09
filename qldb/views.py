@@ -232,14 +232,15 @@ def update_tracking_info(request): # Status.Type, Status.From, Status.To 변경
         logger.exception('Error selecting Tracking.')
         raise e 
 
-# @api_view(['GET'])
-# def check(request):
-#     print(request.user.is_authenticated)
+@api_view(['GET'])
+def check(request):
+    print(request.user.is_authenticated)
+    print(request.user)
 
 
-#     # User=get_user_model() #커스텀 유저 가져옴 
+    # User=get_user_model() #커스텀 유저 가져옴 
     
-#     return Response(status=status.HTTP_201_CREATED)
+    return Response(status=status.HTTP_201_CREATED)
 
 
     
