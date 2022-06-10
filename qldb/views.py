@@ -214,16 +214,14 @@ def insert_first_info(request):
     insert_documents(qldb_driver, QLDB.IMAGE_TABLE_NAME, body['Image'])
     return Response(status=status.HTTP_201_CREATED)
 
-
-@api_view(['PUT'])
-def update_tracking_info(request): # Status.Type, Status.From, Status.To 변경
-    body=json.loads(request.body)
+def modify_state(body,nowuser):
     try:
-        pickquery="SELECT Status['To'] From Tracking where Tracking_id=body['Tracking_id']"
+        pickquery="SELECT Status['To'] From Tracking where Tracking_id=?"
+        cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(pickquery,body['Tracking_id'] ))
+        frombyto=next(cursor)
         try:
             query="UPDATE Tracking set Status['Type'] =?, Status['From']=?, Status['To']=? where Tracking_id=?"
-            # cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query, PO_body['Tracking_id'],PO_body['Discharge_date'],PO_body['PO_info'],PO_body['PO_id']))
-            
+            cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query,body['state'],frombyto,nowuser.username,body['Tracking_id']))     
             
         except Exception as e:
             logger.exception('Error updating Tracking.')
@@ -231,6 +229,18 @@ def update_tracking_info(request): # Status.Type, Status.From, Status.To 변경
     except Exception as e:
         logger.exception('Error selecting Tracking.')
         raise e 
+
+@api_view(['PUT']) 
+def update_tracking_info(request): # Status.Type, Status.From, Status.To 변경, 중상이 가져감
+    # body에 tracking_id랑 state는 필수
+    body=json.loads(request.body)
+    modify_state(body,request.user)
+    
+@api_view(['DELETE']) 
+def delete_tracking_info(request):
+    body=json.loads(request.body)
+    modify_state(body,request.user)
+    # ㅇ여기서 새로 삽입? tracking id가 바뀌게? 아니면 그냥 수정? 아니면 거절 수정 따로?
 
 @api_view(['GET'])
 def check(request):
