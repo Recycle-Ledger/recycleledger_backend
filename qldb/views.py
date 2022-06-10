@@ -235,12 +235,14 @@ def update_tracking_info(request): # Status.Type, Status.From, Status.To 변경,
     # body에 tracking_id랑 state는 필수
     body=json.loads(request.body)
     modify_state(body,request.user)
+    return Response(status=status.HTTP_201_CREATED)
     
 @api_view(['DELETE']) 
 def delete_tracking_info(request):
     body=json.loads(request.body)
     modify_state(body,request.user)
     # ㅇ여기서 새로 삽입? tracking id가 바뀌게? 아니면 그냥 수정? 아니면 거절 수정 따로?
+    return Response(status=status.HTTP_201_CREATED)
 
 @api_view(['GET'])
 def check(request):
