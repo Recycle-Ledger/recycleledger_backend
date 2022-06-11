@@ -113,7 +113,7 @@ def check(request):
     로그인시 POST 
     {
         "phone_num":"01024280249",
-        "password":"패스워드"
+        "password":"password"
     }
     return
     {
