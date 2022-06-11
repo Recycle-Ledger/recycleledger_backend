@@ -9,8 +9,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import *
 from django.contrib.auth import get_user_model
 import json
-import pymysql
-import django.db 
+
 # Create your views here.
 
 @api_view(['POST'])
@@ -44,13 +43,6 @@ def user_info_update(request): #회원정보 수정
         # print(token)
         return Response(status=status.HTTP_201_CREATED)
     return Response(status=status.HTTP_400_BAD_REQUEST)
-
-# @api_view(['GET']) 
-# def check(request):
-#     # cursor = django.db .cursor(pymysql.cursors.DictCursor)
-#     ##print(len(User.objects.all())) -이렇게 갯수 불러오면 됨
-#     return Response (status=status.HTTP_400_BAD_REQUEST)
-
 
 
 # request에 {"phone_num":"","update_data":{}}
@@ -92,7 +84,7 @@ def user_info_update(request): #회원정보 수정
     로그인시 POST 
     {
         "phone_num":"01024280249",
-        "password":"패스워드"
+        "password":"password"
     }
     return
     {

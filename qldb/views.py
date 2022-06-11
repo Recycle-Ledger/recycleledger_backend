@@ -15,6 +15,9 @@ from amazon.ion.simple_types import IonPyBool, IonPyBytes, IonPyDecimal, IonPyDi
     IonPyNull, IonPySymbol, IonPyText, IonPyTimestamp
 from amazon.ion.simpleion import dumps, loads
 
+from django.contrib.auth import get_user_model
+
+
 logger = getLogger(__name__)
 basicConfig(level=INFO)
 IonValue = (IonPyBool, IonPyBytes, IonPyDecimal, IonPyDict, IonPyFloat, IonPyInt, IonPyList, IonPyNull, IonPySymbol,
@@ -140,7 +143,6 @@ def create_index(request):
         create_table_index(qldb_driver, QLDB.PO_TABLE_NAME, QLDB.TRACKING_ID_INDEX_NAME)
         create_table_index(qldb_driver, QLDB.PO_TABLE_NAME, QLDB.DISCHARGE_DATE_INDEX_NAME)
 
-
         logger.info('Indexes created successfully.')
     except Exception as e:
         logger.exception('Unable to create indexes.')
@@ -149,6 +151,8 @@ def create_index(request):
 
 def convert_object_to_ion(py_object):
     ion_object = loads(dumps(py_object))
+    # print(ion_object)
+    # print(type(ion_object))
     return ion_object
 
 def get_document_ids_from_dml_results(result):
@@ -156,106 +160,150 @@ def get_document_ids_from_dml_results(result):
     return ret_val
 
 def insert_documents(driver, table_name, documents):
-    logger.info('Inserting some documents in the {} table...'.format(table_name))
-    statement = 'INSERT INTO {} ?'.format(table_name)
-    cursor = driver.execute_lambda(lambda executor: executor.execute_statement(statement,
+    try:
+        logger.info('Inserting some documents in the {} table...'.format(table_name))
+        statement = 'INSERT INTO {} ?'.format(table_name)
+        # print(statement)
+        cursor = driver.execute_lambda(lambda executor: executor.execute_statement(statement,
                                                                                convert_object_to_ion(documents)))
-    list_of_document_ids = get_document_ids_from_dml_results(cursor)
+        logger.info('Documents inserted successfully!')
+        list_of_document_ids = get_document_ids_from_dml_results(cursor)
+        return list_of_document_ids
+    except Exception as e:
+        logger.info('Error inserting document!')
+        raise e    
 
-    return list_of_document_ids
+def get_num_for_PO_id(PO_id): # PO_id 존재여부 확인 함수 있으면 True 없으면 False
+    try:
+        query = "SELECT COUNT(*) as num_PO FROM PO WHERE PO_id = ?"
+        # group by가 없음 
+        cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query, PO_id))
+        if next(cursor)['num_PO']>0:
+            logger.info('PO value exist')
+            return True
+        else:
+            logger.info('No PO value')  
+            return False 
+             
+    except Exception as e:
+        logger.exception('Error getting "count" for PO_id.')
+        raise e
 
-@api_view(['POST'])
+def update_po_document(driver,PO_body): #트래킹 아이디 변경, 배출일 수정, 식당 정보 수정 -> 같은 집이 새로운 식용유 내둬서 트래킹id 매칭이 바뀌는 행위 
+    try:
+        query = "UPDATE PO SET Tracking_id = ?, Discharge_date=?, PO_info=?  Where PO_id = ?"
+        cursor = driver.execute_lambda(lambda executor: executor.execute_statement(query, PO_body['Tracking_id'],PO_body['Discharge_date'],PO_body['PO_info'],PO_body['PO_id']))
+        logger.info('Documents updated successfully!')
+        list_of_document_ids = get_document_ids_from_dml_results(cursor)
+        return list_of_document_ids
+
+    except Exception as e:
+        logger.info('Error updating document!')
+        raise e   
+
+@api_view(['POST']) #PO가 있는경우는 update -> 요청은 update인데 실제 역할은 같은 집에서 새로운 식용유 내놓아서 바뀐정보를 담는것
 def insert_first_info(request):
     body=json.loads(request.body)
-    # print(body['track'])
-    # print(body['image'])
-    try:    
-        insert_documents(qldb_driver, QLDB.TRACKING_TABLE_NAME, body['Tracking'])
-        insert_documents(qldb_driver, QLDB.IMAGE_TABLE_NAME, body['Image'])
+    # print(body)
+  
+    insert_documents(qldb_driver, QLDB.TRACKING_TABLE_NAME, body['Tracking'])
+    if get_num_for_PO_id(body['PO']['PO_id']):
+        update_po_document(qldb_driver,body['PO']) #이부분이 PO 테이블 업데이트(트랜잭션 추가)
+    else:
         insert_documents(qldb_driver, QLDB.PO_TABLE_NAME, body['PO'])
-
-        logger.info('Documents inserted successfully!')
-    except Exception as e:
-        logger.exception('Error inserting or updating documents.')
-        raise e
+    insert_documents(qldb_driver, QLDB.IMAGE_TABLE_NAME, body['Image'])
     return Response(status=status.HTTP_201_CREATED)
 
-def find_person_from_document_id(transaction_executor, document_id):
-    query = 'SELECT p.* FROM Person AS p BY pid WHERE pid = ?'
-    cursor = transaction_executor.execute_statement(query, document_id)
-    return next(cursor)
-
-def find_primary_owner_for_vehicle(driver, POName):
-    logger.info('Finding primary owner for vehicle with VIN: {}.'.format(POName))
-    query = "SELECT Owners.PrimaryOwner.PersonId FROM VehicleRegistration AS v WHERE v.VIN = ?"
-    cursor = driver.execute_lambda(lambda executor: executor.execute_statement(query, convert_object_to_ion(POName)))
+def modify_state(body,nowuser):
     try:
-        return driver.execute_lambda(lambda executor: find_person_from_document_id(executor,
-                                                                                   next(cursor).get('POName')))
-    except StopIteration:
-        logger.error('No primary owner registered for this vehicle.')
-        return None
-
-
-def get_document_ids(transaction_executor, table_name, field, value):
-    query = "SELECT id FROM {} AS t BY id WHERE t.{} = ?".format(table_name, field)
-    cursor = transaction_executor.execute_statement(query, convert_object_to_ion(value))
-    return list(map(lambda table: table.get('id'), cursor))
-
-def print_result(cursor):
-    result_counter = 0
-    for row in cursor:
-        # Each row would be in Ion format.
-        logger.info(dumps(row, binary=False, indent='  ', omit_version_marker=True))
-        result_counter += 1
-    return result_counter
-
-def update_vehicle_registration(driver, vin, document_id):
-    logger.info('Updating the primary owner for vehicle with Vin: {}...'.format(vin))
-    statement = "UPDATE VehicleRegistration AS r SET r.Owners.PrimaryOwner.PersonId = ? WHERE r.VIN = ?"
-    cursor = driver.execute_lambda(lambda executor: executor.execute_statement(statement, document_id,
-                                                                               convert_object_to_ion(vin)))
-    try:
-        print_result(cursor)
-        logger.info('Successfully transferred vehicle with VIN: {} to new owner.'.format(vin))
-    except StopIteration:
-        raise RuntimeError('Unable to transfer vehicle, could not find registration.')
-
-def validate_and_update_registration(driver, POName, current_owner, new_owner):
-    primary_owner = find_primary_owner_for_vehicle(driver, POName)
-    if primary_owner is None or primary_owner['POName'] != current_owner:
-        raise RuntimeError('Incorrect primary owner identified for vehicle, unable to transfer.')
-
-    document_ids = driver.execute_lambda(lambda executor: get_document_ids(executor, QLDB.TRACKING_TABLE_NAME,
-                                                                           'POName', new_owner))
-    update_vehicle_registration(driver, POName, document_ids[0])
-
-@api_view(['POST'])
-def update_ledger(request):
-
-    #json 데이터가 여러개가 들어올 경우 코드를 수정해야함
-    #일단 한가지 json데이터가 들어오는 경우만 생각해서 짰음
-    #ex)update_body.VEHICLE[0]['VIN'] -> 여러개중에서 첫번째 중 'VIN'을 고르는것
-
-    # 새로 업데이트 되는 데이터가 어떤것이 되어야하는가 
-    update_body=json.loads(request.body)
-    
-    DrainDate = update_body.DrainDate['DrainDate']
-    POName = update_body.POName['POName']
-    Collector = update_body.Collector['Collector']
-    QTY = update_body.QTY['QTY']
-    KG = update_body.KG['KG']
-    ValidFromDate = update_body.ValidFromDate['ValidFromDate']
-    ValidToDate = update_body.ValidToDate['ValidToDate']
-
-    try:
-        
-        validate_and_update_registration(qldb_driver, POName, previous_owner, new_owner)
+        pickquery="SELECT Status['To'] From Tracking where Tracking_id=?"
+        cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(pickquery,body['Tracking_id'] ))
+        frombyto=next(cursor)
+        try:
+            query="UPDATE Tracking set Status['Type'] =?, Status['From']=?, Status['To']=? where Tracking_id=?"
+            cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query,body['state'],frombyto,nowuser.username,body['Tracking_id']))     
+            
+        except Exception as e:
+            logger.exception('Error updating Tracking.')
+            raise e 
     except Exception as e:
-        logger.exception('Error updating VehicleRegistration.')
-        raise e
+        logger.exception('Error selecting Tracking.')
+        raise e 
 
-# 아래와 같이 전달해주면됨
+@api_view(['PUT']) 
+def update_tracking_info(request): # Status.Type, Status.From, Status.To 변경, 중상이 가져감
+    # body에 tracking_id랑 state는 필수
+    body=json.loads(request.body)
+    modify_state(body,request.user)
+    return Response(status=status.HTTP_201_CREATED)
+    
+@api_view(['DELETE']) 
+def delete_tracking_info(request):
+    body=json.loads(request.body)
+    modify_state(body,request.user)
+    # ㅇ여기서 새로 삽입? tracking id가 바뀌게? 아니면 그냥 수정? 아니면 거절 수정 따로?
+    return Response(status=status.HTTP_201_CREATED)
+
+@api_view(['GET'])
+def check(request):
+    print(request.user.is_authenticated)
+    print(request.user)
+
+
+    # User=get_user_model() #커스텀 유저 가져옴 
+    
+    return Response(status=status.HTTP_201_CREATED)
+
+
+    
+# def validate_and_update_registration(driver, vin, current_owner, new_owner):
+   
+#     primary_owner = find_primary_owner_for_vehicle(driver, vin)
+#     if primary_owner is None or primary_owner['GovId'] != current_owner:
+#         raise RuntimeError('Incorrect primary owner identified for vehicle, unable to transfer.')
+
+#     document_ids = driver.execute_lambda(lambda executor: get_document_ids(executor, Constants.PERSON_TABLE_NAME,
+#                                                                            'GovId', new_owner))
+#     update_vehicle_registration(driver, vin, document_ids[0])
+
+
+# def find_primary_owner_for_vehicle(driver, vin):
+    
+#     logger.info('Finding primary owner for vehicle with VIN: {}.'.format(vin))
+#     query = "SELECT Owners.PrimaryOwner.PersonId FROM VehicleRegistration AS v WHERE v.VIN = ?"
+#     cursor = driver.execute_lambda(lambda executor: executor.execute_statement(query, convert_object_to_ion(vin)))
+#     try:
+#         return driver.execute_lambda(lambda executor: find_person_from_document_id(executor,
+#                                                                                    next(cursor).get('PersonId')))
+#     except StopIteration:
+#         logger.error('No primary owner registered for this vehicle.')
+#         return None
+    
+    
+# def find_person_from_document_id(transaction_executor, document_id):
+       
+#     query = 'SELECT p.* FROM Person AS p BY pid WHERE pid = ?'
+#     cursor = transaction_executor.execute_statement(query, document_id)
+#     return next(cursor)
+
+
+# def update_vehicle_registration(driver, vin, document_id):
+   
+#     logger.info('Updating the primary owner for vehicle with Vin: {}...'.format(vin))
+#     statement = "UPDATE VehicleRegistration AS r SET r.Owners.PrimaryOwner.PersonId = ? WHERE r.VIN = ?"
+#     cursor = driver.execute_lambda(lambda executor: executor.execute_statement(statement, document_id,
+#                                                                                convert_object_to_ion(vin)))
+#     try:
+#         print_result(cursor)
+#         logger.info('Successfully transferred vehicle with VIN: {} to new owner.'.format(vin))
+#     except StopIteration:
+#         raise RuntimeError('Unable to transfer vehicle, could not find registration.')
+
+
+
+'''
+
+# 아래와 같이 전달해주면됨 // PO는 json으로 안받
 # {
 #     "Tracking":{
 #         "Can_info": {
@@ -290,3 +338,4 @@ def update_ledger(request):
 
 
 # Delete 구현하기
+'''

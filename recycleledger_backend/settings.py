@@ -14,9 +14,9 @@ import os,json
 from django.core.exceptions import ImproperlyConfigured
 from datetime import timedelta
 from pathlib import Path
-import pymysql
 
-pymysql.install_as_MySQLdb()
+# import pymysql
+# pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -71,7 +71,8 @@ APPEND_SLASH=False # Url 끝에 슬래시 붙여주는 장고 옵션, default는
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",      
+       
     )
 }
 
@@ -129,17 +130,17 @@ WSGI_APPLICATION = 'recycleledger_backend.wsgi.application'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 
-DATABASES = {
-    "default": get_secret("default")
-}
+# DATABASES = {
+#     "default": get_secret("default")
+# }
 
 # test용 local db
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": BASE_DIR / "db.sqlite3",
-#     }
-# }
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
+}
 
 
 # Password validation
