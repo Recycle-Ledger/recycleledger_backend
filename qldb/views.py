@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework import status #응답코드용 
 from rest_framework.response import Response
@@ -10,10 +11,13 @@ from time import sleep
 from qldb.ledger import *
 from botocore.exceptions import ClientError
 from pyqldb.driver.qldb_driver import QldbDriver
+import uuid
 
 from amazon.ion.simple_types import IonPyBool, IonPyBytes, IonPyDecimal, IonPyDict, IonPyFloat, IonPyInt, IonPyList, \
     IonPyNull, IonPySymbol, IonPyText, IonPyTimestamp
 from amazon.ion.simpleion import dumps, loads
+
+from recycleledger_backend.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
 logger = getLogger(__name__)
 basicConfig(level=INFO)
@@ -167,8 +171,7 @@ def insert_documents(driver, table_name, documents):
 @api_view(['POST'])
 def insert_first_info(request):
     body=json.loads(request.body)
-    # print(body['track'])
-    # print(body['image'])
+    
     try:    
         insert_documents(qldb_driver, QLDB.TRACKING_TABLE_NAME, body['Tracking'])
         insert_documents(qldb_driver, QLDB.IMAGE_TABLE_NAME, body['Image'])

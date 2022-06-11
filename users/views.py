@@ -10,7 +10,14 @@ from .serializers import *
 from django.contrib.auth import get_user_model
 import json
 import pymysql
-import django.db 
+import django.db
+import sys
+from django.conf import settings
+import json
+import boto3
+from django.http import JsonResponse
+import uuid
+
 # Create your views here.
 
 @api_view(['POST'])
@@ -22,11 +29,9 @@ def user_signup(request): #회원가입
         return Response(token,status=status.HTTP_201_CREATED)
     return Response(status=status.HTTP_400_BAD_REQUEST)
 
-
 @permission_classes([AllowAny]) #로그인
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class=MyTokenObtainPairSerializer
-
 
 @api_view(['PUT'])    
 # @permission_classes([IsAuthenticated]) #회원으로 인증된 요청 한해서 view 호출
@@ -45,11 +50,27 @@ def user_info_update(request): #회원정보 수정
         return Response(status=status.HTTP_201_CREATED)
     return Response(status=status.HTTP_400_BAD_REQUEST)
 
-# @api_view(['GET']) 
-# def check(request):
-#     # cursor = django.db .cursor(pymysql.cursors.DictCursor)
-#     ##print(len(User.objects.all())) -이렇게 갯수 불러오면 됨
-#     return Response (status=status.HTTP_400_BAD_REQUEST)
+def check(request):
+    s3_client = boto3.client(
+        's3',
+        aws_access_key_id = getattr(settings, 'AWS_ACCESS_KEY_ID'), 
+        aws_secret_access_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY')
+    )
+
+    file = request.FILES.get('file')
+    filename = str(uuid.uuid1()).replace('-','')
+    s3_client.upload_fileobj(
+        file,
+        'recycleledger-image',
+        filename,
+        ExtraArgs = {
+            "ContentType" : 'image/jpeg'
+        }
+    )
+    return JsonResponse({'message':'SUCCESS'},status=200)
+
+
+
 
 
 
