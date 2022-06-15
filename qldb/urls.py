@@ -18,5 +18,6 @@ urlpatterns = [
     
     
     path('check', check, name='check'),
+    path('check2', check2, name='check2'),
     
 ]

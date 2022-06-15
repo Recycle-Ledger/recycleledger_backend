@@ -64,7 +64,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     # s3 위한 것
-    'storages', 
+    # 'storages', 
 ]
 
 AUTH_USER_MODEL="users.User"
@@ -132,17 +132,17 @@ WSGI_APPLICATION = 'recycleledger_backend.wsgi.application'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 
-DATABASES = {
-    "default": get_secret("default")
-}
-
-# # test용 local db
 # DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": BASE_DIR / "db.sqlite3",
-#     }
+#     "default": get_secret("default")
 # }
+
+# test용 local db
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
+}
 
 
 # Password validation
