@@ -339,9 +339,9 @@ def Collector_first_page(request):
     return Response(cursor)
 
 def select_pickup_for_Collector_Com_pk(Collector_Com_pk):
-    print(Collector_Com_pk)
+    # print(Collector_Com_pk)
     Collectortohash=hashlib.sha256(Collector_Com_pk.encode()).hexdigest()
-    print(type(Collectortohash))
+    # print(type(Collectortohash))
     query="SELECT data, metadata.txTime as occurTime from history(Tracking) where data.Status['To'] = ?"
     cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query,Collectortohash))
     return cursor
