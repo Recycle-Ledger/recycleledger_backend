@@ -27,11 +27,6 @@ def user_signup(request): #회원가입
             cursor = { cs for cs in cursor}
             token['list']=cursor
             
-        elif request.data['job']=='좌상':
-            cursor=select_for_PO(request.data["phone_num"])
-            cursor = { cs for cs in cursor}
-            token['list']=cursor
-            
         return Response(token,status=status.HTTP_201_CREATED)
     return Response(status=status.HTTP_400_BAD_REQUEST)
 

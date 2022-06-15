@@ -354,14 +354,14 @@ def Collector_Com_pickup_page(request):
 
 # @api_view(['GET']) 
 
-#redirect 연습
-@api_view(['GET'])
-def check(request):
-    print('first')
-    return HttpResponseRedirect(reverse("qldb:check2"))
+# #redirect 연습
+# @api_view(['GET'])
+# def check(request):
+#     print('first')
+#     return HttpResponseRedirect(reverse("qldb:check2"))
 
-@api_view(['GET'])
-def check2(request):
-    # User=get_user_model() #커스텀 유저 가져옴 
-    serializer=UserSerializer(request.user)
-    return Response(serializer.data)
+# @api_view(['GET'])
+# def check2(request):
+#     # User=get_user_model() #커스텀 유저 가져옴 
+#     serializer=UserSerializer(request.user)
+#     return Response(serializer.data)

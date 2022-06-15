@@ -22,7 +22,7 @@ urlpatterns = [
     path('Collector_Com_pickup_page', Collector_Com_pickup_page, name='Collector_Com_pickup_page'), #픽업페이지
     
     
-    path('check', check, name='check'),
-    path('check2', check2, name='check2'),
+    # path('check', check, name='check'),
+    # path('check2', check2, name='check2'),
     
 ]
