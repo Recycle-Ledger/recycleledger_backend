@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework import status #응답코드용 
 from rest_framework.response import Response
@@ -10,11 +11,13 @@ from time import sleep
 from qldb.ledger import *
 from botocore.exceptions import ClientError
 from pyqldb.driver.qldb_driver import QldbDriver
+import uuid
 
 from amazon.ion.simple_types import IonPyBool, IonPyBytes, IonPyDecimal, IonPyDict, IonPyFloat, IonPyInt, IonPyList, \
     IonPyNull, IonPySymbol, IonPyText, IonPyTimestamp
 from amazon.ion.simpleion import dumps, loads
 
+from recycleledger_backend.settings import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 from django.contrib.auth import get_user_model
 
 

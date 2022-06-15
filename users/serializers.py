@@ -70,7 +70,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         data = super().validate(attrs)
         refresh=self.get_token(self.user)
         data["refresh"]=str(refresh)
-        data["access"]=str(refresh.access_token)
+        data["access"]=str(refresh.access_token)        
         # data["wallet_addr"]=self.user.wallet_addr
         # data["business_num"]=self.user.business_num
         return data

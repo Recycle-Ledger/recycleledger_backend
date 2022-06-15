@@ -9,6 +9,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import *
 from django.contrib.auth import get_user_model
 import json
+from django.conf import settings
+import json
+from django.http import JsonResponse
 
 # Create your views here.
 
@@ -21,15 +24,14 @@ def user_signup(request): #회원가입
         return Response(token,status=status.HTTP_201_CREATED)
     return Response(status=status.HTTP_400_BAD_REQUEST)
 
-
 @permission_classes([AllowAny]) #로그인
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class=MyTokenObtainPairSerializer
 
-
 @api_view(['PUT'])    
 # @permission_classes([IsAuthenticated]) #회원으로 인증된 요청 한해서 view 호출
 def user_info_update(request): #회원정보 수정
+    serializer_class=MyTokenObtainPairSerializer
     body=json.loads(request.body)
     User=get_user_model()
     me=get_object_or_404(User,phone_num=body["phone_num"])
@@ -44,6 +46,8 @@ def user_info_update(request): #회원정보 수정
         return Response(status=status.HTTP_201_CREATED)
     return Response(status=status.HTTP_400_BAD_REQUEST)
 
+def check(request):
+    return JsonResponse({'message':'SUCCESS'},status=200)
 
 # request에 {"phone_num":"","update_data":{}}
 
