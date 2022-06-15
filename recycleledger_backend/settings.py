@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     # app
     'users',
     'qldb',
+    'posts',
     # for rest_framework
     'rest_framework',
     'rest_framework_simplejwt',
@@ -132,17 +133,17 @@ WSGI_APPLICATION = 'recycleledger_backend.wsgi.application'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 
-DATABASES = {
-    "default": get_secret("default")
-}
-
-# # test용 local db
 # DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": BASE_DIR / "db.sqlite3",
-#     }
+#     "default": get_secret("default")
 # }
+
+# test용 local db
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
+}
 
 
 # Password validation
@@ -179,7 +180,12 @@ USE_TZ = False
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
+
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "posts", "static")]
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field

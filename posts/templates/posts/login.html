@@ -1,0 +1,61 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Recycleledger</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body style="width: 100%; ">
+        <div class="left" style="height: 100%;">
+            <img src="{% static 'images/logo1.png' %}" style="width: 100%; height: 100%;">
+        </div>
+      
+        <div class="right" style="height: 100%; align-content: center;" >
+            
+            <h1>Login to your Account</h1>
+            <br>
+            <content style="position: relative;">
+                <form method="post" action="{% url 'posts:main' %}">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <section class="login-input-section-wrap">
+                        <h2>Phone number</h2>
+                        <div class="login-input-wrap">	
+                            <input placeholder="phonenumber" type="text" style="height:2vw; width:50%;" name="phone_num"></input>
+                        </div>
+                        <br>
+                        <h2>Password</h2>
+                        <div class="login-input-wrap password-wrap">	
+                            <input placeholder="password" type="text" style="height:2vw; width:50%;" name="password"></input>
+                        </div>
+                        <br>
+                        <br>
+                        <div class="login">
+                            <input style="height:2vw; width:50%; background-color: #2B9E4E; color: #FFFFFF;" type="submit" value="login"></input>
+                        </div>
+                    </section>
+                </form> 
+                
+            </content>
+        </div>
+        
+    <script src="{% static 'script/jquery.min.js' %}"></script>
+    <script src="{% static 'script/custom.js' %}"></script>
+</body>
+<footer id="footer">
+    <h1><img src="{% static 'images/logo2.png' %}" alt="Recycleledger"></h1>
+    <address>
+        서울특별시 마포구 마포대로 122 프론트원 6층 Recycleledger<br>
+        Copyright &copy; All right reserved
+    </address>
+    <div class="sns">
+        <ul>
+            <li><a href="#"><img src="{% static 'images/icon09.jpg' %}" alt="트위터"></a></li>
+            <li><a href="#"><img src="{% static 'images/icon10.jpg' %}" alt="네이버"></a></li>
+            <li><a href="#"><img src="{% static 'images/icon11.jpg' %}" alt="페이스북"></a></li>
+        </ul>
+    </div>
+</footer>
+</html>
