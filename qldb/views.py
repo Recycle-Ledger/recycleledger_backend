@@ -1,4 +1,6 @@
-from django.http import JsonResponse
+from django.urls import reverse
+
+from django.http import HttpResponseRedirect
 from rest_framework.decorators import api_view
 from rest_framework import status #응답코드용 
 from rest_framework.response import Response
@@ -308,6 +310,12 @@ def reject(request):
   
 @api_view(['GET'])
 def check(request):
+    print('first')
+    
+    return HttpResponseRedirect(reverse("qldb:check2"))
+
+@api_view(['GET'])
+def check2(request):
     print(request.user.is_authenticated)
     print(request.user)
     print(request.user.job)
