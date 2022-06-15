@@ -1,10 +1,13 @@
-from django.http import JsonResponse
+from django.urls import reverse
+
+from django.http import HttpResponseRedirect
 from rest_framework.decorators import api_view
 from rest_framework import status #응답코드용 
 from rest_framework.response import Response
 from django.conf import settings
 import json
 import boto3
+import hashlib
 # from boto3 import client
 from logging import basicConfig, getLogger, INFO
 from time import sleep
@@ -210,33 +213,41 @@ def update_po_document(driver,PO_body): #트래킹 아이디 변경, 배출일 �
 def insert_first_info(request):
     body=json.loads(request.body)
     # print(body)
-  
+    PO_pk=request.user.phone_num
+    POtohash=hashlib.sha256(PO_pk.encode()).hexdigest()
+    body["Tracking"]["PO_id"]=POtohash
+    body["Tracking"]["Status"]["From"]=POtohash
+    body["PO"]["PO_id"]=POtohash
+    # print(POtohash)
+    # print(hashlib.sha256(me_PO.phone_num.encode()).hexdigest())
     insert_documents(qldb_driver, QLDB.TRACKING_TABLE_NAME, body['Tracking'])
     if get_num_for_PO_id(body['PO']['PO_id']):
         update_po_document(qldb_driver,body['PO']) #이부분이 PO 테이블 업데이트(트랜잭션 추가)
     else:
         insert_documents(qldb_driver, QLDB.PO_TABLE_NAME, body['PO'])
     insert_documents(qldb_driver, QLDB.IMAGE_TABLE_NAME, body['Image'])
-    return Response(status=status.HTTP_201_CREATED)
+    
+    cursor=select_for_PO(PO_pk)
+    return Response(cursor,status=status.HTTP_201_CREATED)
 
-def modify_status(body,nowuser):
+def modify_status(body,nowuser_pk): #from to type 변경 함수
     
     try:
        
-        pickquery="SELECT Status['To'] From Tracking where Tracking_id=?"
+        pickquery="SELECT Status['To'] as who From Tracking where Tracking_id=?"
         cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(pickquery,body['Tracking_id'] ))
         frombyto=next(cursor)
-        
-         
+        usertohash=hashlib.sha256(nowuser_pk.encode()).hexdigest()
+        print(frombyto["who"])
         try:
-            if frombyto == "": # 식당 -> 중상, From 변경 X
+            if frombyto["who"] == "": # 식당 -> 중상, From 변경 X
                 
                 if body['Status']['Type']=="수거":
                     query="UPDATE Tracking set Status['Type'] =?, Status['To']=? where Tracking_id=?"
                     cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement
                                                         (query,
                                                         body['Status']['Type'],
-                                                        nowuser.username,
+                                                        usertohash,
                                                         body['Tracking_id']))    
                 elif body['Status']['Type']=="거부":
                     query="UPDATE Tracking set Status['Type'] =? where Tracking_id=?"
@@ -250,8 +261,8 @@ def modify_status(body,nowuser):
                     cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement
                                                         (query,
                                                         body['Status']['Type'],
-                                                        frombyto,
-                                                        nowuser.username,
+                                                        frombyto["who"],
+                                                        usertohash,
                                                         body['Tracking_id']))
                 elif body['Status']['Type']=="거부":
                     query="UPDATE Tracking set Status['Type'] =? where Tracking_id=?"
@@ -272,13 +283,14 @@ def modify_status(body,nowuser):
 def pickup(request): # Status.Type, Status.From, Status.To 변경, 중상이 가져감
     # body에 tracking_id랑 state는 필수
     body=json.loads(request.body)
-    modify_status(body,request.user)
-    return Response(status=status.HTTP_201_CREATED)
+    modify_status(body,request.user.phone_num)
+    cursor=select_pickup_for_Collector_Com_pk(request.user.phone_num) #내가 수거한 목록
+    return Response(cursor,status=status.HTTP_201_CREATED)
 '''
     엑세스 토큰 헤더
     {
        "Status":{
-            "Type" : "수거",
+            "Type" : "수거"
         },
         "Tracking_id": "12l3kj5h345lkjg654"
     }
@@ -294,109 +306,62 @@ def update_info(request):
 @api_view(['PUT'])
 def reject(request):
     body=json.loads(request.body) #tracking_id만 넘어오면될듯 거부해야하니까
-    modify_status(body,request.user)
-    return Response(status=status.HTTP_201_CREATED)
+    modify_status(body,request.user.phone_num)
+    cursor=select_PO_for_Collector() #거절하고 다른 등록중 식당 정보
+    
+    return Response(cursor,status=status.HTTP_201_CREATED)
 '''
     엑세스 토큰 헤더
     {
        "Status":{
-            "Type" : "거부",
+            "Type" : "거부"
         },
         "Tracking_id": "12l3kj5h345lkjg654"
     }
 '''
-  
-@api_view(['GET'])
-def check(request):
-    print(request.user.is_authenticated)
-    print(request.user)
-    print(request.user.job)
+def select_for_PO(PO_pk):
+    POtohash=hashlib.sha256(PO_pk.encode()).hexdigest()
+    query="SELECT data, metadata.txTime as discharge_time FROM _ql_committed_Tracking where data.PO_id=?;"
+    cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query,POtohash))
+    return cursor
 
-    # User=get_user_model() #커스텀 유저 가져옴 
-    serializer=UserSerializer(request.user)
+@api_view(['GET']) #식당이 자신이 올린 식용유 최종 상태 열람
+def PO_first_page(request): 
+    cursor=select_for_PO(request.user.phone_num)
+    return Response(cursor)
+
+def select_PO_for_Collector():
     
-    return Response(serializer.data)
-    
-# def validate_and_update_registration(driver, vin, current_owner, new_owner):
-   
-#     primary_owner = find_primary_owner_for_vehicle(driver, vin)
-#     if primary_owner is None or primary_owner['GovId'] != current_owner:
-#         raise RuntimeError('Incorrect primary owner identified for vehicle, unable to transfer.')
+    query="SELECT * from Tracking where Status['Type']='등록';"
+    cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query))
+    return cursor
 
-#     document_ids = driver.execute_lambda(lambda executor: get_document_ids(executor, Constants.PERSON_TABLE_NAME,
-#                                                                            'GovId', new_owner))
-#     update_vehicle_registration(driver, vin, document_ids[0])
+@api_view(['GET'])    #중상이 "등록" 상태의 식당 열람
+def Collector_first_page(request):
+    cursor=select_PO_for_Collector()
+    return Response(cursor)
 
+def select_pickup_for_Collector_Com_pk(Collector_Com_pk):
+    Collectortohash=hashlib.sha256(Collector_Com_pk.encode()).hexdigest()
+    query="SELECT * from history(Tracking) where data.Status['To']='?';"
+    cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query,Collectortohash))
+    return cursor
 
-# def find_primary_owner_for_vehicle(driver, vin):
-    
-#     logger.info('Finding primary owner for vehicle with VIN: {}.'.format(vin))
-#     query = "SELECT Owners.PrimaryOwner.PersonId FROM VehicleRegistration AS v WHERE v.VIN = ?"
-#     cursor = driver.execute_lambda(lambda executor: executor.execute_statement(query, convert_object_to_ion(vin)))
-#     try:
-#         return driver.execute_lambda(lambda executor: find_person_from_document_id(executor,
-#                                                                                    next(cursor).get('PersonId')))
-#     except StopIteration:
-#         logger.error('No primary owner registered for this vehicle.')
-#         return None
-    
-    
-# def find_person_from_document_id(transaction_executor, document_id):
-       
-#     query = 'SELECT p.* FROM Person AS p BY pid WHERE pid = ?'
-#     cursor = transaction_executor.execute_statement(query, document_id)
-#     return next(cursor)
+@api_view(['GET']) #중상,좌상이 자신의 픽업 기록 열람 
+def Collector_Com_pickup_page(request):
+    cursor=select_pickup_for_Collector_Com_pk(request.user.phone_num)
+    return Response(cursor)
 
+# @api_view(['GET']) 
 
-# def update_vehicle_registration(driver, vin, document_id):
-   
-#     logger.info('Updating the primary owner for vehicle with Vin: {}...'.format(vin))
-#     statement = "UPDATE VehicleRegistration AS r SET r.Owners.PrimaryOwner.PersonId = ? WHERE r.VIN = ?"
-#     cursor = driver.execute_lambda(lambda executor: executor.execute_statement(statement, document_id,
-#                                                                                convert_object_to_ion(vin)))
-#     try:
-#         print_result(cursor)
-#         logger.info('Successfully transferred vehicle with VIN: {} to new owner.'.format(vin))
-#     except StopIteration:
-#         raise RuntimeError('Unable to transfer vehicle, could not find registration.')
+# #redirect 연습
+# @api_view(['GET'])
+# def check(request):
+#     print('first')
+#     return HttpResponseRedirect(reverse("qldb:check2"))
 
-
-
-'''
-
-# 아래와 같이 전달해주면됨 // PO는 json으로 안받
-# {
-#     "Tracking":{
-#         "Can_info": {
-#             "QTY" : 3,
-#             "KG" : 5
-#         },
-#         "Image_id": "fha84hfl8oh2i4hfl1123",
-#         "PO_id": "1il2u3h4li1hu23li4h",
-#         "Status":{
-#             "Type" : "등록",
-#             "From" : "식당",
-#             "To" : "중상"
-#         },
-#         "Tracking_id": "12l3kj5h345lkjg654"
-#     },
-#     "Image":{
-#         "Image_id":"fha84hfl8oh2i4hfl1123",
-#         "Image_url": "https://www.google.com",
-#         "Tracking_id": "12l3kj5h345lkjg654"
-#     },
-#     "PO":{
-#         "Discharge_date":"datetime(2022, 5, 26)",
-#         "Open_status": "영업중",
-#         "PO_id": "1il2u3h4li1hu23li4h",
-#         "PO_info": {
-#             "주소" : "서울특별시 서초구 효령로 266 태원빌딩 4층",
-#             "상호명" : "버거킹 서초점"
-#         },
-#         "Tracking_id": "12l3kj5h345lkjg654"
-#     }
-# }
-
-
-# Delete 구현하기
-'''
+# @api_view(['GET'])
+# def check2(request):
+#     # User=get_user_model() #커스텀 유저 가져옴 
+#     serializer=UserSerializer(request.user)
+#     return Response(serializer.data)
