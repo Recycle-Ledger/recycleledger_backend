@@ -231,9 +231,7 @@ def insert_first_info(request):
     return Response(cursor,status=status.HTTP_201_CREATED)
 
 def modify_status(body,nowuser_pk): #from to type 변경 함수
-    
     try:
-       
         pickquery="SELECT Status['To'] as who From Tracking where Tracking_id=?"
         cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(pickquery,body['Tracking_id'] ))
         frombyto=next(cursor)
@@ -241,7 +239,6 @@ def modify_status(body,nowuser_pk): #from to type 변경 함수
         print(frombyto["who"])
         try:
             if frombyto["who"] == "": # 식당 -> 중상, From 변경 X
-                
                 if body['Status']['Type']=="수거":
                     query="UPDATE Tracking set Status['Type'] =?, Status['To']=? where Tracking_id=?"
                     cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement
@@ -342,13 +339,16 @@ def Collector_first_page(request):
     return Response(cursor)
 
 def select_pickup_for_Collector_Com_pk(Collector_Com_pk):
+    # print(Collector_Com_pk)
     Collectortohash=hashlib.sha256(Collector_Com_pk.encode()).hexdigest()
-    query="SELECT * from history(Tracking) where data.Status['To']='?';"
+    # print(type(Collectortohash))
+    query="SELECT data, metadata.txTime as occurTime from history(Tracking) where data.Status['To'] = ?"
     cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query,Collectortohash))
     return cursor
 
 @api_view(['GET']) #중상,좌상이 자신의 픽업 기록 열람 
 def Collector_Com_pickup_page(request):
+    
     cursor=select_pickup_for_Collector_Com_pk(request.user.phone_num)
     return Response(cursor)
 
