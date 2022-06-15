@@ -284,7 +284,7 @@ def pickup(request): # Status.Type, Status.From, Status.To 변경, 중상이 가
     # body에 tracking_id랑 state는 필수
     body=json.loads(request.body)
     modify_status(body,request.user.phone_num)
-    cursor=select_pickup_for_Collector(request.user.phone_num) #내가 수거한 목록
+    cursor=select_pickup_for_Collector_Com_pk(request.user.phone_num) #내가 수거한 목록
     return Response(cursor,status=status.HTTP_201_CREATED)
 '''
     엑세스 토큰 헤더
