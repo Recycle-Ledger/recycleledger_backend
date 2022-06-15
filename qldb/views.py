@@ -17,6 +17,8 @@ from amazon.ion.simpleion import dumps, loads
 
 from django.contrib.auth import get_user_model
 
+from users.serializers import UserSerializer
+
 
 logger = getLogger(__name__)
 basicConfig(level=INFO)
@@ -214,14 +216,46 @@ def insert_first_info(request):
     insert_documents(qldb_driver, QLDB.IMAGE_TABLE_NAME, body['Image'])
     return Response(status=status.HTTP_201_CREATED)
 
-def modify_state(body,nowuser):
+def modify_status(body,nowuser):
+    
     try:
+       
         pickquery="SELECT Status['To'] From Tracking where Tracking_id=?"
         cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(pickquery,body['Tracking_id'] ))
         frombyto=next(cursor)
+        
+         
         try:
-            query="UPDATE Tracking set Status['Type'] =?, Status['From']=?, Status['To']=? where Tracking_id=?"
-            cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query,body['state'],frombyto,nowuser.username,body['Tracking_id']))     
+            if frombyto == "": # 식당 -> 중상, From 변경 X
+                
+                if body['Status']['Type']=="수거":
+                    query="UPDATE Tracking set Status['Type'] =?, Status['To']=? where Tracking_id=?"
+                    cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement
+                                                        (query,
+                                                        body['Status']['Type'],
+                                                        nowuser.username,
+                                                        body['Tracking_id']))    
+                elif body['Status']['Type']=="거부":
+                    query="UPDATE Tracking set Status['Type'] =? where Tracking_id=?"
+                    cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement
+                                                        (query,
+                                                        body['Status']['Type'],
+                                                        body['Tracking_id']))    
+            else: # 중상 -> 좌상
+                if body['Status']['Type']=="수거":
+                    query="UPDATE Tracking set Status['Type'] =?, Status['From']=?, Status['To']=? where Tracking_id=?"
+                    cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement
+                                                        (query,
+                                                        body['Status']['Type'],
+                                                        frombyto,
+                                                        nowuser.username,
+                                                        body['Tracking_id']))
+                elif body['Status']['Type']=="거부":
+                    query="UPDATE Tracking set Status['Type'] =? where Tracking_id=?"
+                    cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement
+                                                        (query,
+                                                        body['Status']['Type'],
+                                                        body['Tracking_id']))  
             
         except Exception as e:
             logger.exception('Error updating Tracking.')
@@ -229,32 +263,56 @@ def modify_state(body,nowuser):
     except Exception as e:
         logger.exception('Error selecting Tracking.')
         raise e 
-
+    
+# 수거, 중상 & 좌상
 @api_view(['PUT']) 
-def update_tracking_info(request): # Status.Type, Status.From, Status.To 변경, 중상이 가져감
+def pickup(request): # Status.Type, Status.From, Status.To 변경, 중상이 가져감
     # body에 tracking_id랑 state는 필수
     body=json.loads(request.body)
-    modify_state(body,request.user)
+    modify_status(body,request.user)
     return Response(status=status.HTTP_201_CREATED)
-    
-@api_view(['DELETE']) 
-def delete_tracking_info(request):
-    body=json.loads(request.body)
-    modify_state(body,request.user)
-    # ㅇ여기서 새로 삽입? tracking id가 바뀌게? 아니면 그냥 수정? 아니면 거절 수정 따로?
+'''
+    엑세스 토큰 헤더
+    {
+       "Status":{
+            "Type" : "수거",
+        },
+        "Tracking_id": "12l3kj5h345lkjg654"
+    }
+'''
+
+#수정
+# @api_view(['GET']):
+@api_view(['PUT'])
+def update_info(request):
     return Response(status=status.HTTP_201_CREATED)
 
+#거부, 중상 & 좌상
+@api_view(['PUT'])
+def reject(request):
+    body=json.loads(request.body) #tracking_id만 넘어오면될듯 거부해야하니까
+    modify_status(body,request.user)
+    return Response(status=status.HTTP_201_CREATED)
+'''
+    엑세스 토큰 헤더
+    {
+       "Status":{
+            "Type" : "거부",
+        },
+        "Tracking_id": "12l3kj5h345lkjg654"
+    }
+'''
+  
 @api_view(['GET'])
 def check(request):
     print(request.user.is_authenticated)
     print(request.user)
-
+    print(request.user.job)
 
     # User=get_user_model() #커스텀 유저 가져옴 
+    serializer=UserSerializer(request.user)
     
-    return Response(status=status.HTTP_201_CREATED)
-
-
+    return Response(serializer.data)
     
 # def validate_and_update_registration(driver, vin, current_owner, new_owner):
    
