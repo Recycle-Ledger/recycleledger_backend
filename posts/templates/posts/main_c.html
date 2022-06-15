@@ -1,0 +1,165 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Recycleledger</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<header>
+    
+</header>
+<body>
+    <div id="wrap" class="clearfix">
+        <aside id="aside">
+            <h1><img src="{% static 'images/logo2.png' %}" alt="Recycleledger" style="width: 15vw; min-width: 140px;"></h1>
+            <nav class="nav">
+                <ul>
+                    <li>
+                        <div style="text-align : center;"><img src="{% static 'images/logo3.png' %}"></div>
+                    </li>
+                    <li class="active"><a href="#"><img src="{% static 'images/home.png' %}"> Overview</a>
+                    </li>
+                    <li><a href="#"><img src="{% static 'images/sellers.png' %}"> Sellers</a>
+                        <ul class="submenu">
+                            <li><a href="#">Dansuk</a></li>
+                            <li><a href="#">Yosimoto</a></li>
+                            <li><a href="#">Sanghal Bio</a></li>
+                            <li><a href="#">Dheil Koba</a></li>
+                            <li><a href="#">Kallesh</a></li>
+                            <li><a href="#">Change Sellers</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#"><img src="{% static 'images/account.png' %}"> Connected accounts</a>
+                    </li>
+                    <li><a href="#"><img src="{% static 'images/map.png' %}"> Auto Map</a>
+                    </li>
+                    <li><a href="#"><img src="{% static 'images/report.png' %}"> Make Reports</a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+        
+        <section id="contents">
+            <div class="row mt-5">
+                <div class="col-12">
+                    <table class="table1 table-light">
+                        <thead class="thead-light">
+                            <tr>
+                                <th scope="col">Totka QTY : 891M </th>
+                                <th scope="col">Total Weight : 682T</th>
+                                <th scope="col">Collecting Company : 4</th>
+                                <th scope="col">Verified Ratio : 100%</th>
+                                <th scope="col">Region : Korea</th>
+                            </tr>
+                        </thead>
+                    </table>
+                    <table class="table table-light">
+                        <thead class="thead-light">
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Date</th>
+                                <th scope="col">PO Name</th>
+                                <th scope="col">Address</th>
+                                <th scope="col">Collector</th>
+                                <th scope="col">QTY</th>
+                                <th scope="col">KG</th>
+                                <th scope="col">Collecting Company</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-dark">
+                            <tr>
+                                <th scope="row">12l3kj5h345lkjg654</th>
+                                <th scope="row">완료</th>
+                                <th scope="row">2022, 5, 26</th>
+                                <th scope="row">*</th>
+                                <th scope="row">*</th>
+                                <th scope="row">1il2u3h4li1hu23li4h</th>
+                                <th scope="row">1개</th>
+                                <th scope="row">10kg</th>
+                                <th scope="row">신흥물산</th>
+                            </tr>
+                        </tbody>
+                        <tbody class="text-dark">
+                            <tr>
+                                <th scope="row">12l3kj5h345lkjg654</th>
+                                <th scope="row">완료</th>
+                                <th scope="row">2022, 5, 26</th>
+                                <th scope="row">*</th>
+                                <th scope="row">*</th>
+                                <th scope="row">1il2u3h4li1hu23li4h</th>
+                                <th scope="row">1개</th>
+                                <th scope="row">10kg</th>
+                                <th scope="row">신흥물산</th>
+                            </tr>
+                        </tbody>
+                        <tbody class="text-dark">
+                            <tr>
+                                <th scope="row">12l3kj5h345lkjg654</th>
+                                <th scope="row">완료</th>
+                                <th scope="row">2022, 5, 26</th>
+                                <th scope="row">*</th>
+                                <th scope="row">*</th>
+                                <th scope="row">1il2u3h4li1hu23li4h</th>
+                                <th scope="row">1개</th>
+                                <th scope="row">10kg</th>
+                                <th scope="row">신흥물산</th>
+                            </tr>
+                        </tbody>
+                        <tbody class="text-dark">
+                            <tr>
+                                <th scope="row">12l3kj5h345lkjg654</th>
+                                <th scope="row">완료</th>
+                                <th scope="row">2022, 5, 26</th>
+                                <th scope="row">*</th>
+                                <th scope="row">*</th>
+                                <th scope="row">1il2u3h4li1hu23li4h</th>
+                                <th scope="row">1개</th>
+                                <th scope="row">10kg</th>
+                                <th scope="row">신흥물산</th>
+                            </tr>
+                        </tbody>
+
+                        <!-- <tbody class="text-dark">
+                            {% for product in product_list %}
+                            <tr>
+                                <th scope="row">#</th>
+                                <th scope="row">완료</th>
+                                <th scope="row">{{product.date}}</th>
+                                <th scope="row">{{product.PO_info.name}}</th>
+                                <th scope="row">{{product.PO_info.address}}</th>
+                                <th scope="row">{{product.PO_id}}</th>
+                                <th scope="row">{{product.Can_info.QTY}}</th>
+                                <th scope="row">{{product.Can_info.KG}}</th>
+                                <th scope="row">단석</th>
+                            </tr>
+                            {%endfor%}
+                        </tbody> -->
+                    </table>
+                </div>
+            </div>
+
+        </section>
+        <footer id="footer" class="clearfix">
+            <h1><img src="{% static 'images/logo2.png' %}" alt="Recycleledger"></h1>
+            <address>
+                <!-- 서울특별시 마포구 마포대로 122 프론트원 6층 Recycleledger<br> -->
+                동국대학교 신공학관<br>
+                Copyright &copy; All right reserved
+            </address>
+            <div class="sns">
+                <ul>
+                    <li><a href="#"><img src="{% static 'images/icon09.jpg' %}" alt="트위터"></a></li>
+                    <li><a href="#"><img src="{% static 'images/icon10.jpg' %}" alt="네이버"></a></li>
+                    <li><a href="#"><img src="{% static 'images/icon11.jpg' %}" alt="페이스북"></a></li>
+                </ul>
+            </div>
+        </footer>
+    </div>
+    
+    <script src="{% static 'script/jquery.min.js' %}"></script>
+    <script src="{% static 'script/custom.js' %}"></script>
+</body>
+</html>

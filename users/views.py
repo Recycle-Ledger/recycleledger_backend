@@ -33,6 +33,7 @@ def user_signup(request): #회원가입
 @permission_classes([AllowAny]) #로그인
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class=MyTokenObtainPairSerializer
+    
 
 @api_view(['PUT'])    
 # @permission_classes([IsAuthenticated]) #회원으로 인증된 요청 한해서 view 호출
