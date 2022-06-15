@@ -23,7 +23,7 @@ def user_signup(request): #회원가입
             cursor = { cs for cs in cursor}
             token['list']=cursor
         elif request.data['job']=="중상":
-            cursor=select_PO_for_Collector(request.data["phone_num"])
+            cursor=select_PO_for_Collector()
             cursor = { cs for cs in cursor}
             token['list']=cursor
             
