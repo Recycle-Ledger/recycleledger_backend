@@ -9,14 +9,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import *
 from django.contrib.auth import get_user_model
 import json
-import pymysql
-import django.db
-import sys
 from django.conf import settings
 import json
-import boto3
 from django.http import JsonResponse
-import uuid
 
 # Create your views here.
 
@@ -36,6 +31,7 @@ class MyTokenObtainPairView(TokenObtainPairView):
 @api_view(['PUT'])    
 # @permission_classes([IsAuthenticated]) #회원으로 인증된 요청 한해서 view 호출
 def user_info_update(request): #회원정보 수정
+    serializer_class=MyTokenObtainPairSerializer
     body=json.loads(request.body)
     User=get_user_model()
     me=get_object_or_404(User,phone_num=body["phone_num"])
@@ -51,28 +47,7 @@ def user_info_update(request): #회원정보 수정
     return Response(status=status.HTTP_400_BAD_REQUEST)
 
 def check(request):
-    s3_client = boto3.client(
-        's3',
-        aws_access_key_id = getattr(settings, 'AWS_ACCESS_KEY_ID'), 
-        aws_secret_access_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY')
-    )
-
-    file = request.FILES.get('file')
-    filename = str(uuid.uuid1()).replace('-','')
-    s3_client.upload_fileobj(
-        file,
-        'recycleledger-image',
-        filename,
-        ExtraArgs = {
-            "ContentType" : 'image/jpeg'
-        }
-    )
     return JsonResponse({'message':'SUCCESS'},status=200)
-
-
-
-
-
 
 # request에 {"phone_num":"","update_data":{}}
 
