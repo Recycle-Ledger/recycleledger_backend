@@ -11,12 +11,12 @@ from django.utils.translation import gettext_lazy as _
 # AbstractBaseUser : 상속받아 생성하는 클래스 
 
 class UserManager(BaseUserManager):
-    def create_user(self,phone_num,username,password,account,job): # user 생성 함수 
+    def create_user(self,phone_num,password,account,job): # user 생성 함수 
         
         if not phone_num:
             raise ValueError(_('핸드폰 번호는 필수'))
-        if not username:
-            raise ValueError(_('사용자 이름은 필수'))
+        # if not username:
+        #     raise ValueError(_('사용자 이름은 필수'))
         if not password:
             raise ValueError(_('비밀번호는 필수'))
         if not account:
@@ -24,7 +24,7 @@ class UserManager(BaseUserManager):
  
         user=self.model(
             phone_num=phone_num,
-            username=username,
+            # username=username,
             account=account,
             job=job
         ) 
@@ -32,10 +32,10 @@ class UserManager(BaseUserManager):
         user.save(using=self._db) # settings에 db중 기본 db 사용한다는 의미
         return user
     
-    def create_superuser(self,phone_num,username,password): # superuser 생성 함수 
+    def create_superuser(self,phone_num,password): # superuser 생성 함수 
         user = self.create_user(
             phone_num=phone_num,
-            username=username,
+            # username=username,
             password=password
         )
         user.is_superuser=True
@@ -54,7 +54,7 @@ class User(AbstractBaseUser,PermissionsMixin):
     # id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False) 
     business_num=models.CharField(verbose_name=_("사업자등록번호"), max_length=20,unique=True,null=True,blank=True)# 사업자등록번호는 10자리로 구성됨
     phone_num= models.CharField(verbose_name=_("핸드폰 번호"),unique=True,max_length=15) # 전화번호(필수)
-    username=models.CharField(verbose_name=_("사용자 이름"),max_length=20) # 사용자 이름 (필수)
+    username=models.CharField(verbose_name=_("사용자 이름"),max_length=20,null=True,blank=True) # 사용자 이름 (필수)
     address=models.CharField(verbose_name=_("주소"), max_length=100,null=True,blank=True) # 주소
     account=models.CharField(verbose_name=_("계좌번호"), max_length=100,unique=True) # 계좌번호(필수)
     po_name=models.CharField(verbose_name=_("상호명"), max_length=50,null=True,blank=True) # 상호명
