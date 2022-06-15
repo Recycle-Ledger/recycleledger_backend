@@ -11,10 +11,15 @@ urlpatterns = [
     
     
     # 정보 삽입
-    path('first_info', insert_first_info, name='insert_first_info'),
+    path('discharge', insert_first_info, name='insert_first_info'),
+    path('pickup', pickup, name='pickup'),
+    path('reject', reject, name='reject'),
     
     # 트래킹 정보 수정
     # path('first_info/<str:Tracking_id>', insert_first_info, name='insert_first_info'),
+    path('PO_first_page', PO_first_page, name='PO_first_page'),
+    path('Collector_first_page', Collector_first_page, name='Collector_first_page'), #중상첫페이지 
+    path('Collector_Com_pickup_page', Collector_Com_pickup_page, name='Collector_Com_pickup_page'), #픽업페이지
     
     
     path('check', check, name='check'),

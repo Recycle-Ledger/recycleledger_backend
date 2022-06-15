@@ -1,5 +1,3 @@
-from collections import UserList
-from operator import index
 from django.shortcuts import render,get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -9,9 +7,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import *
 from django.contrib.auth import get_user_model
 import json
-from django.conf import settings
-import json
-from django.http import JsonResponse
+from qldb.views import select_for_PO, select_PO_for_Collector
 
 # Create your views here.
 
@@ -21,6 +17,21 @@ def user_signup(request): #회원가입
     userserializer=UserSerializer(data=request.data)
     if userserializer.is_valid(raise_exception=True): #UserSerializer validate
         token = userserializer.save()
+        
+        if request.data["job"]=="식당":
+            cursor=select_for_PO(request.data["phone_num"])
+            cursor = { cs for cs in cursor}
+            token['list']=cursor
+        elif request.data['job']=="중상":
+            cursor=select_PO_for_Collector(request.data["phone_num"])
+            cursor = { cs for cs in cursor}
+            token['list']=cursor
+            
+        elif request.data['job']=='좌상':
+            cursor=select_for_PO(request.data["phone_num"])
+            cursor = { cs for cs in cursor}
+            token['list']=cursor
+            
         return Response(token,status=status.HTTP_201_CREATED)
     return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -46,8 +57,6 @@ def user_info_update(request): #회원정보 수정
         return Response(status=status.HTTP_201_CREATED)
     return Response(status=status.HTTP_400_BAD_REQUEST)
 
-def check(request):
-    return JsonResponse({'message':'SUCCESS'},status=200)
 
 # request에 {"phone_num":"","update_data":{}}
 
