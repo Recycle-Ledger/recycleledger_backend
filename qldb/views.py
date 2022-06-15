@@ -307,7 +307,7 @@ def update_info(request):
 def reject(request):
     body=json.loads(request.body) #tracking_id만 넘어오면될듯 거부해야하니까
     modify_status(body,request.user.phone_num)
-    cursor=select_PO_for_Collector(request.user.phone_num) #거절하고 다른 등록중 식당 정보
+    cursor=select_PO_for_Collector() #거절하고 다른 등록중 식당 정보
     
     return Response(cursor,status=status.HTTP_201_CREATED)
 '''
@@ -330,15 +330,15 @@ def PO_first_page(request):
     cursor=select_for_PO(request.user.phone_num)
     return Response(cursor)
 
-def select_PO_for_Collector(Collector_pk):
-    Collectortohash=hashlib.sha256(Collector_pk.encode()).hexdigest()
+def select_PO_for_Collector():
+    
     query="SELECT * from Tracking where Status['Type']='등록';"
-    cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query,Collectortohash))
+    cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query))
     return cursor
 
 @api_view(['GET'])    #중상이 "등록" 상태의 식당 열람
 def Collector_first_page(request):
-    cursor=select_PO_for_Collector(request.user.phone_num)
+    cursor=select_PO_for_Collector()
     return Response(cursor)
 
 def select_pickup_for_Collector_Com_pk(Collector_Com_pk):
@@ -354,14 +354,14 @@ def Collector_Com_pickup_page(request):
 
 # @api_view(['GET']) 
 
-#redirect 연습
-@api_view(['GET'])
-def check(request):
-    print('first')
-    return HttpResponseRedirect(reverse("qldb:check2"))
+# #redirect 연습
+# @api_view(['GET'])
+# def check(request):
+#     print('first')
+#     return HttpResponseRedirect(reverse("qldb:check2"))
 
-@api_view(['GET'])
-def check2(request):
-    # User=get_user_model() #커스텀 유저 가져옴 
-    serializer=UserSerializer(request.user)
-    return Response(serializer.data)
+# @api_view(['GET'])
+# def check2(request):
+#     # User=get_user_model() #커스텀 유저 가져옴 
+#     serializer=UserSerializer(request.user)
+#     return Response(serializer.data)
