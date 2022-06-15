@@ -1,6 +1,6 @@
 class QLDB:
     
-    LEDGER_NAME = "recycleleger-qldb"
+    LEDGER_NAME = "recycleleger-qldb2"
     
     # 트래킹 테이블
     TRACKING_TABLE_NAME = "Tracking"
