@@ -74,8 +74,7 @@ APPEND_SLASH=False # Url 끝에 슬래시 붙여주는 장고 옵션, default는
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",      
-       
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     )
 }
 

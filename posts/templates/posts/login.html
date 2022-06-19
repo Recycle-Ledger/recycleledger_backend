@@ -17,7 +17,7 @@
             <h1>Login to your Account</h1>
             <br>
             <content style="position: relative;">
-                <form method="post" action="{% url 'posts:main' %}">
+                <form method="post" action="{% url 'users:login' %}">
                     {% csrf_token %}
                     {{ form.as_p }}
                     <section class="login-input-section-wrap">
