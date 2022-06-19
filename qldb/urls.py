@@ -12,14 +12,23 @@ urlpatterns = [
     
     # 정보 삽입
     path('discharge', insert_first_info, name='insert_first_info'),
-    path('pickup', pickup, name='pickup'),
-    path('reject', reject, name='reject'),
+    #중상
+    path('collector_pickup', collector_pickup, name='collector_pickup'),
+    path('collector_reject', collector_reject, name='collector_reject'),
+    #좌상
+    path('com_pickup', com_pickup, name='com_pickup'),
+    path('com_reject', com_reject, name='com_reject'),
     
     # 트래킹 정보 수정
     # path('first_info/<str:Tracking_id>', insert_first_info, name='insert_first_info'),
-    path('PO_first_page', PO_first_page, name='PO_first_page'),
-    path('Collector_first_page', Collector_first_page, name='Collector_first_page'), #중상첫페이지 
-    path('Collector_Com_pickup_page', Collector_Com_pickup_page, name='Collector_Com_pickup_page'), #픽업페이지
+    path('po_first_page', po_first_page, name='po_first_page'),
+    path('collector_first_page', collector_first_page, name='collector_first_page'), #중상첫페이지 
+    
+    
+    path('collector_com_pickup_page', collector_com_pickup_page, name='collector_com_pickup_page'), #중상 좌상 수거목록 페이지
+
+  
+    path('update_info', update_info, name='update_info'), 
     
     
     # path('check', check, name='check'),

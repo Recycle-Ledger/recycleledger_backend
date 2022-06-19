@@ -7,7 +7,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import *
 from django.contrib.auth import get_user_model
 import json
-from qldb.views import select_for_PO, select_PO_for_Collector
+from qldb.views import select_for_po, select_po_for_collector
 
 # Create your views here.
 
@@ -19,11 +19,11 @@ def user_signup(request): #회원가입
         token = userserializer.save()
         
         if request.data["job"]=="식당":
-            cursor=select_for_PO(request.data["phone_num"])
+            cursor=select_for_po(request.data["phone_num"])
             cursor = { cs for cs in cursor}
             token['list']=cursor
         elif request.data['job']=="중상":
-            cursor=select_PO_for_Collector()
+            cursor=select_po_for_collector()
             cursor = { cs for cs in cursor}
             token['list']=cursor
             
