@@ -7,8 +7,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenVerifyView
 from .serializers import *
 from django.contrib.auth import get_user_model
 import json
-from qldb.views import select_for_PO, select_PO_for_Collector
-from rest_framework import permissions
+from qldb.services.select_data import select_for_po, select_po_for_collector
+
 # Create your views here.
 
 @api_view(['POST'])
@@ -19,11 +19,11 @@ def user_signup(request): #회원가입
         token = userserializer.save()
         
         if request.data["job"]=="식당":
-            cursor=select_for_PO(request.data["phone_num"])
+            cursor=select_for_po(request.data["phone_num"])
             cursor = { cs for cs in cursor}
             token['list']=cursor
         elif request.data['job']=="중상":
-            cursor=select_PO_for_Collector()
+            cursor=select_po_for_collector()
             cursor = { cs for cs in cursor}
             token['list']=cursor
             
@@ -59,7 +59,6 @@ def user_info_update(request): #회원정보 수정
         return Response(status=status.HTTP_201_CREATED)
     return Response(status=status.HTTP_400_BAD_REQUEST)
 
-
 # request에 {"phone_num":"","update_data":{}}
 
 class TokenVerify(TokenVerifyView):
@@ -73,70 +72,3 @@ class TokenVerify(TokenVerifyView):
         account = self.get_object()
         serializer = UserSerializer(account)
         return Response(serializer.data)
-
-
-
-
-
-'''
-    업데이트시 수정해서 폼 그대로 작성
-    {
-        "phone_num":"01024280249",
-        "username":"이태검",
-        "address":"여의도 위워크",
-        "account":"27960204127606",
-        "po_name":"버거킹 서초점",
-        "business_num":"1234123412",
-        "password":"password",
-        "job":"중상"
-    }   
-
-
-
-    회원가입시 POST
-    {
-        "phone_num":"01024280249",
-        "username":"이태검",
-        "address":"여의도 위워크",
-        "account":"27960204127606",
-        "po_name":"버거킹",
-        "business_num":"1234123412",
-        "password":"password",
-        "job":"중상"
-    }   
-    return 
-    {
-        "refresh":"토큰",
-        "access":"토큰"
-    }
-    
-'''
-'''
-    로그인시 POST 
-    {
-        "phone_num":"01024280249",
-        "password":"password"
-    }
-    return
-    {
-        "refresh": "토큰",
-        "access": "토큰",
-
-    }
-'''
-'''
-    로그아웃시 POST
-    {
-        "refresh":"토큰"
-    }
-    return
-    {} #200ok
-    
-    로그인 안한상황에 로그아웃하면
-    {
-        "detail": "블랙리스트에 추가된 토큰",
-        "code": "token_not_valid"
-    }
-  
-'''
-
