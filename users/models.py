@@ -1,11 +1,17 @@
+from datetime import datetime, timedelta
 from distutils.command.upload import upload
+import secrets
+from time import strftime
 from xml.etree.ElementInclude import default_loader
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 from django.utils.translation import gettext_lazy as _
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+import jwt
 
+from recycleledger_backend.settings import SECRET_KEY, SIMPLE_JWT
 # import uuid
 
 # Create your models here.
@@ -38,7 +44,8 @@ class UserManager(BaseUserManager):
     def create_superuser(self,phone_num,password): # superuser 생성 함수 
         user = self.create_user(
             phone_num=phone_num,
-            # username=username,
+            account="0000",
+            job="환경부",
             password=password
         )
         user.is_superuser=True
@@ -76,8 +83,20 @@ class User(AbstractBaseUser,PermissionsMixin):
     REQUIRED_FIELD=["phone_num","username","account","job"] #필수적 요구 필드 
 
     def __str__(self):
-        return self.phone_num  
-    
+        return self.phone_num
+
+    @property
+    def token(self):
+        return self._generate_jwt_token()
+
+    def _generate_jwt_token(self):
+        dt = datetime.now() + timedelta(days=60)
+
+        token = jwt.encode({
+            'id' : self.phone_num,
+            'password' : int(dt.strftime('%s'))
+        }, settings.SECRET_KEY, algorithm='HS256')
+        return token
 #verbose_name : 설정해두면 verbose_name 출력하면 설정값이 나옴
 
 #profile 부분

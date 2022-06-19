@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status #응답코드용 
 from rest_framework.permissions import AllowAny,IsAuthenticated
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenVerifyView
 from .serializers import *
 from django.contrib.auth import get_user_model
 import json
@@ -34,6 +34,12 @@ def user_signup(request): #회원가입
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class=MyTokenObtainPairSerializer
     
+    def main(self):
+        user = self.request.user
+        return render(request, "posts/main.html", {"user": user})   
+    
+    
+
 
 @api_view(['PUT'])    
 # @permission_classes([IsAuthenticated]) #회원으로 인증된 요청 한해서 view 호출
@@ -53,3 +59,16 @@ def user_info_update(request): #회원정보 수정
         return Response(status=status.HTTP_201_CREATED)
     return Response(status=status.HTTP_400_BAD_REQUEST)
 
+# request에 {"phone_num":"","update_data":{}}
+
+class TokenVerify(TokenVerifyView):
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = MyTokenVerifySerializer
+
+    def get_object(self):
+        return self.request.user
+
+    def get_queryset(self):
+        account = self.get_object()
+        serializer = UserSerializer(account)
+        return Response(serializer.data)

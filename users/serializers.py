@@ -1,8 +1,14 @@
 from urllib import request
+from django.shortcuts import redirect
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenVerifySerializer
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken
+from django.contrib.auth import authenticate
+import jwt
+from django.conf import settings
+
 
 User=get_user_model() #커스텀 유저 가져옴 
 
@@ -67,6 +73,13 @@ class UserSerializer(serializers.ModelSerializer):
     
     
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super(MyTokenObtainPairSerializer, cls).get_token(user)
+        # Add custom claims
+        # token['username'] = user.username
+        return token
+
     def validate(self,attrs):
         data = super().validate(attrs)
         refresh=self.get_token(self.user)
@@ -74,7 +87,21 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         data["access"]=str(refresh.access_token)        
         # data["wallet_addr"]=self.user.wallet_addr
         # data["business_num"]=self.user.business_num
-
+        print(refresh)
+        data['user'] = UserSerializer(self.user).data
+        # print(jwt.decode(refresh.access_token,'secret',algorithms = 'HS256'))
         return data
+    
 
+    
 
+class MyTokenVerifySerializer(TokenVerifySerializer):
+    token = serializers.CharField()
+
+    def validate(self, attrs):
+        # UntypedToken(attrs['token'])
+        data = jwt.decode(attrs['token'], settings.SECRET_KEY, algorithms=['HS256'])
+        data = {'id': data['user_id']}
+
+    
+        return data
