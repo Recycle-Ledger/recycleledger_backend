@@ -10,6 +10,7 @@ import hashlib
 
 #모델 호출
 from users.serializers import UserSerializer
+from django.contrib.auth import get_user_model
 
 #모듈 호출
 from qldb.services.qldb_setting import *
@@ -72,7 +73,7 @@ def create_index(request):
     return Response(status=status.HTTP_201_CREATED)
 
 
-# ---------------------- 식당 폐식용유 등록 --------------------------
+# ---------------------- 식당 폐식용유 등록 -> 등록 후 po_first_page로 redirect --------------------------
 
 @api_view(['POST']) #PO가 있는경우는 update -> 요청은 update인데 실제 역할은 같은 집에서 새로운 식용유 내놓아서 바뀐정보를 담는것
 def insert_first_info(request):
@@ -97,7 +98,7 @@ def insert_first_info(request):
     # return Response(cursor,status=status.HTTP_201_CREATED)
     return HttpResponseRedirect(reverse("qldb:po_first_page"))
 
-# ---------------------- 중상 폐식용유 수거 --------------------------
+# ---------------------- 중상 폐식용유 수거 -> 수거 후 collector_com_pickup_page로 redirect --------------------------
 
 @api_view(['PUT']) 
 def collector_pickup(request): # Status.Type, Status.From, Status.To 변경, 중상이 가져감
@@ -141,11 +142,13 @@ def com_reject(request):
     com_modify_status(body,request.user.phone_num)
     return Response(status=status.HTTP_201_CREATED)
 
-#수정
+# ---------------------- 폐식용유 정보 수정 --------------------------
+
 @api_view(['PUT'])
 def update_info(request):
     
     return Response(status=status.HTTP_201_CREATED)
+
 
 # ---------------------- 식당 첫페이지 - 자신이 올린 폐식용유의 현재까지의 상태 --------------------------
 
@@ -169,9 +172,13 @@ def collector_com_pickup_page(request):
     return Response(cursor)
     
 
-
-
-
+# ---------------------- 좌상이 중상 수거 내역 확인 페이지 --------------------------
+@api_view(['GET'])
+def collector_com_QTY_KG_info(request,collector_pk):
+    User=get_user_model()
+    collector=get_object_or_404(User,phone_num=collector_pk)
+    print(collector.profile.total_KG)
+    print(collector.profile.total_QTY)
 
 
 # 테이블 수 체크
