@@ -33,13 +33,6 @@ def user_signup(request): #회원가입
 @permission_classes([AllowAny]) #로그인
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class=MyTokenObtainPairSerializer
-    
-    def main(self):
-        user = self.request.user
-        return render(request, "posts/main.html", {"user": user})   
-    
-    
-
 
 @api_view(['PUT'])    
 # @permission_classes([IsAuthenticated]) #회원으로 인증된 요청 한해서 view 호출
@@ -61,14 +54,17 @@ def user_info_update(request): #회원정보 수정
 
 # request에 {"phone_num":"","update_data":{}}
 
-class TokenVerify(TokenVerifyView):
-    permission_classes = (permissions.AllowAny,)
-    serializer_class = MyTokenVerifySerializer
+#################verify부분 수정중 ##################
 
-    def get_object(self):
-        return self.request.user
+# class TokenVerify(TokenVerifyView):
+#     permission_classes = (permissions.AllowAny,)
+#     serializer_class = MyTokenVerifySerializer
 
-    def get_queryset(self):
-        account = self.get_object()
-        serializer = UserSerializer(account)
-        return Response(serializer.data)
+#     def get_object(self):
+#         return self.request.user
+
+#     def get_queryset(self):
+#         account = self.get_object()
+#         serializer = UserSerializer(account)
+#         return Response(serializer.data)
+

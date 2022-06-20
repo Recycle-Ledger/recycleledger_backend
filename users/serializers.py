@@ -3,8 +3,7 @@ from django.shortcuts import redirect
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenVerifySerializer
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 import jwt
 from django.conf import settings
@@ -71,15 +70,8 @@ class UserSerializer(serializers.ModelSerializer):
         # return 값을 create 처럼 json꼴로 만들어서 주고 views Response에 token 같이 return 해도됨
         # 업데이트하면 로그인이 풀리는지 확인해보기
     
-    
+# app용     
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super(MyTokenObtainPairSerializer, cls).get_token(user)
-        # Add custom claims
-        # token['username'] = user.username
-        return token
-
     def validate(self,attrs):
         data = super().validate(attrs)
         refresh=self.get_token(self.user)
@@ -87,14 +79,24 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         data["access"]=str(refresh.access_token)        
         # data["wallet_addr"]=self.user.wallet_addr
         # data["business_num"]=self.user.business_num
+        return data
+
+# web 용  
+class MyWebTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self,attrs):
+        print("1")
+        data = super().validate(attrs)
+        print()
+        refresh=self.get_token(self.user)
+        data["refresh"]=str(refresh)
+        data["access"]=str(refresh.access_token)        
+        # data["wallet_addr"]=self.user.wallet_addr
+        # data["business_num"]=self.user.business_num
         print(refresh)
         data['user'] = UserSerializer(self.user).data
-        # print(jwt.decode(refresh.access_token,'secret',algorithms = 'HS256'))
         return data
     
-
-    
-
+# Verify 수정중
 class MyTokenVerifySerializer(TokenVerifySerializer):
     token = serializers.CharField()
 
@@ -102,6 +104,5 @@ class MyTokenVerifySerializer(TokenVerifySerializer):
         # UntypedToken(attrs['token'])
         data = jwt.decode(attrs['token'], settings.SECRET_KEY, algorithms=['HS256'])
         data = {'id': data['user_id']}
-
-    
+        
         return data

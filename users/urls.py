@@ -15,6 +15,5 @@ urlpatterns = [
     path('token-verify', TokenVerifyView.as_view(), name='token_verify'),
     
     path('info-update',user_info_update,name="info_update"),
-  
     # as_view는 클래스 진입 메소드 
 ]

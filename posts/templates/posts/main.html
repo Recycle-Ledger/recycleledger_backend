@@ -7,17 +7,7 @@
     <title>Recycleledger</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
-<header>                      
-        <h6 style="margin-bottom:5%;">ID: {{user}}</h6>
-        <h6 style="margin-bottom:5%;">ID: {{user.business_num}}</h6>
-        <h6 style="margin-bottom:5%;">ID: {{user.phone_num}}</h6>
-        <h6 style="margin-bottom:5%;">ID: {{user.address}}</h6>
-        <h6 style="margin-bottom:5%;">ID: {{refresh}}</h6>
-        <h6 style="margin-bottom:5%;">ID: {{access}}</h6>
-        <h6 style="margin-bottom:5%;">ID: {{user_id}}</h6>
-        <h6 style="margin-bottom:5%;">ID: {{user.user_id}}</h6>
-</div>
-</header>
+
 <body>
     <div id="wrap" class="clearfix">
         <aside id="aside">
@@ -25,7 +15,11 @@
             <nav class="nav">
                 <ul>
                     <li>
-                        <div style="text-align : center;"><img src="{% static 'images/logo3.png' %}"></div>
+                        <div style="text-align : center;">
+                            <!-- <img src="{% static 'images/logo3.png' %}"> -->
+                            <h3> {{user.phone_num}} 님 반갑습니다!</h3>
+                            <h3> 권한 : {{user.job}}</h3>
+                        </div>
                     </li>
                     <li class="active"><a href="#"><img src="{% static 'images/home.png' %}"> Overview</a>
                     </li>
