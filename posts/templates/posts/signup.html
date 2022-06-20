@@ -14,13 +14,20 @@
       
         <div class="right" style="height: 100%; align-content: center;" >
             
-            <h1>Login to your Account</h1>
+            <h1>회원가입</h1>
             <br>
             <content style="position: relative;">
-                <form method="post" action="{% url 'posts:main' %}">
+                <form method="post" action="{% url 'posts:signup' %}">
                     {% csrf_token %}
                     {{ form.as_p }}
                     <section class="login-input-section-wrap">
+                        <h2>회원 분류</h2>
+                        <select name="job" style="height:2vw; width:50%;" value="job">
+                            <option value="좌상">좌상</option>
+                            <option value="단석">단석</option>
+                        </select>
+                        <br>
+                        <br>
                         <h2>Phone number</h2>
                         <div class="login-input-wrap">	
                             <input placeholder="phonenumber" type="text" style="height:2vw; width:50%;" name="phone_num"></input>
@@ -31,15 +38,30 @@
                             <input placeholder="password" type="text" style="height:2vw; width:50%;" name="password"></input>
                         </div>
                         <br>
-                        <br>
-                        <div class="login">
-                            <input style="height:2vw; width:50%; background-color: #2B9E4E; color: #FFFFFF;" type="submit" value="login"></input>
+                        <h2>사용자 이름</h2>
+                        <div class="login-input-wrap password-wrap">	
+                            <input placeholder="username" type="text" style="height:2vw; width:50%;" name="username"></input>
                         </div>
                         <br>
+                        <h2>계좌 번호</h2>
+                        <div class="login-input-wrap password-wrap">	
+                            <input placeholder="account" type="text" style="height:2vw; width:50%;" name="account"></input>
+                        </div>
+                        <br>
+                        <h2>회사 이름</h2>
+                        <div class="login-input-wrap password-wrap">	
+                            <input placeholder="company" type="text" style="height:2vw; width:50%;" name="po_name"></input>
+                        </div>
+                        <br>
+                        <h2>사업자 등록번호</h2>
+                        <div class="login-input-wrap password-wrap">	
+                            <input placeholder="company number" type="text" style="height:2vw; width:50%;" name="business_num"></input>
+                        </div>
+                        <br>
+
                         <div class="signup">
-                            <button type="button" style="height:2vw; width:50%; background-color: #2B9E4E; color: #FFFFFF;" value="sign up"><a href="{% url 'posts:signup' %}" style="color: #FFFFFF;">sign up</a></input>
+                            <input style="height:2vw; width:50%; background-color: #2B9E4E; color: #FFFFFF;" type="submit" value="signup"></input>
                         </div>
-                        <h4>* 환경부의 경우 Recycleledger에 문의 주시기 바랍니다.</h4>
                     </section>
                 </form> 
                 

@@ -1,67 +1,86 @@
 from email import message
-from django.shortcuts import redirect, render
+from django.shortcuts import render
 from users.views import *
+from users.serializers import *
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import get_user_model
-from django.contrib import messages
-from django.contrib.auth import authenticate,login
-from rest_framework import status
 from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-import json
-from django.http import HttpResponse, JsonResponse
+from django.contrib import messages
+
 
 
 User=get_user_model()
-# Create your views here.
-# def main(request):
-#     # current_user=UserSerializer(User,data=request.data)
-#     # current_user = request.user
-#     # print(current_user)
-#     # if request.method=='POST':
-#     #     phone_num = request.POST['phone_num']
-#     #     print(phone_num)
-#     #     if phone_num=="01088888888":
-#     #         return render(request,"posts/main_c.html")
-#     #     elif phone_num=="01022222222":
-#     #         return render(request,"posts/main_j.html")    
-#     #     else:
-#     user = request.user
-#     return render(request, "posts/main.html", {"user": user})
 
-def main_j(request):
-    return render(request,"posts/main_j.html")
+@api_view(['POST'])
+@permission_classes([AllowAny, ])
+def main(request):
+    if request.method=='POST':
+        phone_num = request.POST['phone_num']
+        password = request.POST['password']
 
-def main_c(request):
-    return render(request,"posts/main_c.html")
+        check = authenticate(phone_num=phone_num, password=password)
+        if check==None:
+            return render(request,"posts/signup.html") 
 
-# def login(request):
-#     if request.method=='POST':
-#         phone_num = request.POST['phone_num']
-#         password = request.POST['password']
-#         post_data = request.POST.copy()
+        else:
+            a = {"phone_num":phone_num , "password":password}
+            serializer_class=MyWebTokenObtainPairSerializer(TokenObtainPairSerializer).validate(a)
+
+            job = serializer_class['user']['job']
+            if job=="좌상":
+                return render(request,"posts/main_c.html",{"user" : serializer_class['user']})
+            elif job=="환경부":
+                return render(request,"posts/main.html",{"user" : serializer_class['user']})
+            else:
+                return render(request,"posts/main_j.html",{"user" : serializer_class['user']})
+ 
+def login(request):
+    return render(request,"posts/login.html")    
+
+def signup(request):
+    if request.method=='POST':
+        phone_num = request.POST['phone_num']
+        password = request.POST['password']
+        username = request.POST['username']
+        account = request.POST['account']
+        job = request.POST['job']
+        po_name = request.POST['po_name']
+        business_num = request.POST['business_num']
+        address = None
+
+        data = {
+            "phone_num":phone_num, 
+            "password":password, 
+            "username":username, 
+            "account":account,
+            "job":job,
+            "po_name":po_name,
+            "business_num": business_num,
+            "address": address,
+        }
+
+        userserializer=UserSerializer(data=data)
+        if userserializer.is_valid(raise_exception=True): #UserSerializer validate
+            token = userserializer.save()
         
-#         print(post_data)
-        
+            if request.data["job"]=="식당":
+                cursor=select_for_po(request.data["phone_num"])
+                cursor = { cs for cs in cursor}
+                token['list']=cursor
+            elif request.data['job']=="중상":
+                cursor=select_po_for_collector()
+                cursor = { cs for cs in cursor}
+                token['list']=cursor
 
-#         # url = "http://localhost:8000/users/login/"
-#         content = {
-#             "phone_num" : phone_num,
-#             "password" : password        
-#         }
+            return render(request,"posts/login.html")
+        else:
+            # 예외 처리 필요
+            alert
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
-#         print(type(json.dumps(content)))
-#         # headers = {'content-type' : 'application/json'}
 
-#         # print(type(content))
+    return render(request,"posts/signup.html")    
 
-#         return JsonResponse(json.dumps(content), content_type="application/json")
-
-#         # serializer = MyTokenObtainPairSerializer(data=data)
-#         # print(serializer)
-
-#         # return render(request,"posts/main.html")
-
-#     return render(request,"posts/login.html")    
-
-    
+# 예외처리 알림 메세지
+def alert(request):
+    message.warning(request,"이미 가입된 회원입니다.")
