@@ -17,7 +17,11 @@
             <nav class="nav">
                 <ul>
                     <li>
-                        <div style="text-align : center;"><img src="{% static 'images/logo3.png' %}"></div>
+                        <div style="text-align : center;">
+                            <!-- <img src="{% static 'images/logo3.png' %}"> -->
+                            <h3> {{user.phone_num}} 님 반갑습니다!</h3>
+                            <h3> 권한 : {{user.job}}</h3>
+                        </div>
                     </li>
                     <li class="active"><a href="#"><img src="{% static 'images/home.png' %}"> Overview</a>
                     </li>
