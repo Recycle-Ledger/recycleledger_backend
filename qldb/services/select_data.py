@@ -1,6 +1,30 @@
 from qldb.services.qldb_setting import *
 import hashlib
 
+# ---------- 해당 PO_id 존재여부 확인 함수, 있으면 True 없으면 False -------
+def get_num_for_PO_id(po_id): 
+    try:
+        query = "SELECT COUNT(*) as num_PO FROM PO WHERE PO_id = ?"
+        # group by가 없음 
+        cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query, po_id))
+        if next(cursor)['num_PO']>0:
+            logger.info('PO value exist')
+            return True
+        else:
+            logger.info('No PO value')  
+            return False 
+             
+    except Exception as e:
+        logger.exception('Error getting "count" for PO_id.')
+        raise e
+    
+# ----------- 결과값에 대한 documentId 리스트로 반환 --------
+def get_document_ids_from_dml_results(result):
+    ret_val = list(map(lambda x: x.get('documentId'), result))
+    return ret_val
+
+# ------------
+
 def select_po_for_collector():
     
     query="SELECT * from Tracking where Status['Type']='등록';"

@@ -70,19 +70,21 @@ def create_index(request):
 @api_view(['POST']) #PO가 있는경우는 update -> 요청은 update인데 실제 역할은 같은 집에서 새로운 식용유 내놓아서 바뀐정보를 담는것
 def discharge_info(request):
     body=json.loads(request.body)
-
+    nowuser=request.user
+    if nowuser.job=='식당':
+        po_pk=nowuser.phone_num
+    elif nowuser.job =='직원':
+        po_pk=nowuser.User.phone_num
+        
     #QR정보 기입
     insert_documents(qldb_driver, QLDB.TRACKING_TABLE_NAME, body['Tracking'])
-    
-    po_pk=request.user.phone_num
     potohash=hashlib.sha256(po_pk.encode()).hexdigest()
-    body["PO"]["PO_id"]=potohash
-    
-    if get_num_for_PO_id(body['PO']['PO_id']):
-        update_po_document(qldb_driver,body['PO']) #이부분이 PO 테이블 업데이트(트랜잭션 추가)
-    else:
-        insert_documents(qldb_driver, QLDB.PO_TABLE_NAME, body['PO'])
-    insert_documents(qldb_driver, QLDB.IMAGE_TABLE_NAME, body['Image'])
+    for po_body in body['PO']:
+        po_body['PO_id']=potohash
+        if get_num_for_PO_id(po_body['PO_id']):
+            update_po_document(qldb_driver,po_body) 
+        else:
+            insert_documents(qldb_driver, QLDB.PO_TABLE_NAME, po_body)
     
     return HttpResponseRedirect(reverse("qldb:po_first_page"))
 
@@ -190,3 +192,9 @@ def collector_com_QTY_KG_info(request,collector_pk):
 #     print('first')
 #     return HttpResponseRedirect(reverse("qldb:check2"))
 
+# select t.QR_id, t.Status, t.Can_kg, t.Status_change_time, p.data.PO_id, p.data.PO_info, p.data.Open_status, p.data.Discharge_date  from Tracking as t join history(PO) as p on t.QR_id = p.data.QR_id;
+# 최종상태의 qr에 대한 po 조인값
+
+
+# select t.data.QR_id, t.data.Status, t.data.Can_kg, t.data.Status_change_time, p.data.PO_id, p.data.PO_info, p.data.Open_status, p.data.Discharge_date  from history(Tracking) as t join history(PO) as p on t.data.QR_id = p.data.QR_id;
+# QR_id에 대한 Tracking history를 볼때 po 조인값
