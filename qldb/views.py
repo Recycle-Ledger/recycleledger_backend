@@ -28,42 +28,34 @@ def create_ledger(request):
     except Exception as e:
         logger.exception('Unable to create the ledger!')
         raise e
-   
     return Response(status=status.HTTP_201_CREATED)
 
 @api_view(['POST'])
 def create_table(request):
     try: 
         create_qldb_table(qldb_driver, QLDB.TRACKING_TABLE_NAME)
-        create_qldb_table(qldb_driver, QLDB.IMAGE_TABLE_NAME)
         create_qldb_table(qldb_driver, QLDB.PO_TABLE_NAME)
-
         logger.info('Tables created successfully.')
     except Exception as e:
         logger.exception('Errors creating tables.')
         raise e
     return Response(status=status.HTTP_201_CREATED)
+
 @api_view(['POST'])
 def create_index(request):
     logger.info('Creating indexes on all tables...')
     try:
         # 트래킹 테이블 구성
-        create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.TRACKING_ID_INDEX_NAME)
+        create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.QR_ID_INDEX_NAME)
         create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.STATUS_INDEX_NAME)
-        create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.CAN_INFO_INDEX_NAME)
-        create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.IMAGE_ID_INDEX_NAME)
-        create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.PO_ID_INDEX_NAME)
-
-        # 이미지 테이블 구성
-        create_table_index(qldb_driver, QLDB.IMAGE_TABLE_NAME, QLDB.TRACKING_ID_INDEX_NAME)
-        create_table_index(qldb_driver, QLDB.IMAGE_TABLE_NAME, QLDB.IMAGE_URL_INDEX_NAME)
-        create_table_index(qldb_driver, QLDB.IMAGE_TABLE_NAME, QLDB.IMAGE_ID_INDEX_NAME)
+        create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.CAN_KG_INDEX_NAME)
+        create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.STATUS_CHANGE_TIME_INDEX_NAME)
 
         # 식당 테이블 구성 
+        create_table_index(qldb_driver, QLDB.PO_TABLE_NAME, QLDB.QR_ID_INDEX_NAME)
         create_table_index(qldb_driver, QLDB.PO_TABLE_NAME, QLDB.PO_ID_INDEX_NAME)
         create_table_index(qldb_driver, QLDB.PO_TABLE_NAME, QLDB.PO_INFO_INDEX_NAME)
         create_table_index(qldb_driver, QLDB.PO_TABLE_NAME, QLDB.OPEN_STATUS_INDEX_NAME)
-        create_table_index(qldb_driver, QLDB.PO_TABLE_NAME, QLDB.TRACKING_ID_INDEX_NAME)
         create_table_index(qldb_driver, QLDB.PO_TABLE_NAME, QLDB.DISCHARGE_DATE_INDEX_NAME)
 
         logger.info('Indexes created successfully.')
@@ -76,26 +68,22 @@ def create_index(request):
 # ---------------------- 식당 폐식용유 등록 -> 등록 후 po_first_page로 redirect --------------------------
 
 @api_view(['POST']) #PO가 있는경우는 update -> 요청은 update인데 실제 역할은 같은 집에서 새로운 식용유 내놓아서 바뀐정보를 담는것
-def insert_first_info(request):
+def discharge_info(request):
     body=json.loads(request.body)
-    # print(body)
+
+    #QR정보 기입
+    insert_documents(qldb_driver, QLDB.TRACKING_TABLE_NAME, body['Tracking'])
+    
     po_pk=request.user.phone_num
     potohash=hashlib.sha256(po_pk.encode()).hexdigest()
-    body["Tracking"]["PO_id"]=potohash
-    body["Tracking"]["Status"]["From"]=potohash
     body["PO"]["PO_id"]=potohash
-    # print(POtohash)
-    # print(hashlib.sha256(me_PO.phone_num.encode()).hexdigest())
-    insert_documents(qldb_driver, QLDB.TRACKING_TABLE_NAME, body['Tracking'])
+    
     if get_num_for_PO_id(body['PO']['PO_id']):
         update_po_document(qldb_driver,body['PO']) #이부분이 PO 테이블 업데이트(트랜잭션 추가)
     else:
         insert_documents(qldb_driver, QLDB.PO_TABLE_NAME, body['PO'])
     insert_documents(qldb_driver, QLDB.IMAGE_TABLE_NAME, body['Image'])
     
-
-    # cursor=select_for_po(po_pk)
-    # return Response(cursor,status=status.HTTP_201_CREATED)
     return HttpResponseRedirect(reverse("qldb:po_first_page"))
 
 # ---------------------- 중상 폐식용유 수거 -> 수거 후 collector_com_pickup_page로 redirect --------------------------
@@ -155,21 +143,22 @@ def update_info(request):
 @api_view(['GET']) 
 def po_first_page(request): 
     cursor=select_for_po(request.user.phone_num)
-    return Response(cursor)
+    return Response(cursor,status=status.HTTP_200_OK)
 
-# ---------------------- 중상 첫페이지 -"등록" 상태의 식당 리스트 중상 열람  --------------------------
+# ---------------------- 중상 첫페이지 - "등록" 상태의 식당 리스트 중상 열람  --------------------------
 
 @api_view(['GET'])   
 def collector_first_page(request):
     cursor=select_po_for_collector()
-    return Response(cursor)
+ 
+    return Response(cursor,status=status.HTTP_200_OK)
 
 # ---------------------- 중상 + 좌상 현재까지 자신들의 수거 목록 리스트 -> 수거 후에 이 페이지로 넘어감   --------------------------
 
 @api_view(['GET']) 
 def collector_com_pickup_page(request):
     cursor=select_pickup_for_collector_com_pk(request.user.phone_num)
-    return Response(cursor)
+    return Response(cursor,status=status.HTTP_200_OK)
     
 
 # ---------------------- 좌상이 중상 수거 내역 확인 페이지 --------------------------
@@ -179,6 +168,7 @@ def collector_com_QTY_KG_info(request,collector_pk):
     collector=get_object_or_404(User,phone_num=collector_pk)
     print(collector.profile.total_KG)
     print(collector.profile.total_QTY)
+    return Response(status=status.HTTP_200_OK)
 
 
 # 테이블 수 체크

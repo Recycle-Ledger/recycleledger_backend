@@ -2,7 +2,7 @@ from qldb.services.qldb_setting import *
 
 def convert_object_to_ion(py_object):
     ion_object = loads(dumps(py_object))
-    # print(ion_object)
+    print(ion_object)
     # print(type(ion_object))
     return ion_object
 

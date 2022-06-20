@@ -4,14 +4,14 @@ app_name="qldb"
 
 urlpatterns = [
     # 원장 생성 및 테이블 구성
-    path('ledger', create_ledger, name='create_ledger'),
+    path('ledger', create_ledger, name='ledger'),
     # path('create_driver', create_qldb_driver, name='create_driver'),
-    path('table', create_table, name='create_table'),
-    path('index', create_index, name='create_index'),
+    path('table', create_table, name='table'),
+    path('index', create_index, name='index'),
     
     
     #식당 폐식용유 등록
-    path('discharge', insert_first_info, name='insert_first_info'),
+    path('discharge_info', discharge_info, name='discharge_info'),
     #중상 수거 & 거절
     path('collector_pickup', collector_pickup, name='collector_pickup'),
     path('collector_reject', collector_reject, name='collector_reject'),

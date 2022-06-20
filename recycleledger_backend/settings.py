@@ -91,11 +91,11 @@ SIMPLE_JWT = {
     "USER_ID_CLAIM": "user_id",
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
     "TOKEN_TYPE_CLAIM": "token_type",
-    "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
-    "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
-    "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
+    # "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
+    # "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
+    # "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
 }
-# access refresh, sliding 주기는 장고 simplejwt 사이트에값 참고
+# access refresh, sliding - 작성한내용 날라가고 하는걸 방지하려고 기간을 더 잡고 access가 만료돼도 sliding 토큰으로 승인 해주는 로직인거같음
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
