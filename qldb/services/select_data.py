@@ -23,17 +23,26 @@ def get_document_ids_from_dml_results(result):
     ret_val = list(map(lambda x: x.get('documentId'), result))
     return ret_val
 
-# ------------
+# ------------ 선택된 식당의 등록, 수정 상태의 폐식용유 상태 리스트 반환 -------
 
+def select_po_oil_status_for_collector(potohash):
+    
+    query="SELECT * from Tracking where Status['Type'] in ('등록','수정') where PO_id=?"
+    cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query,potohash))
+    return cursor
+
+# ----------- 등록, 수정 상태의 오일을 가지고 있는 식당 리스트 반환 -----
 def select_po_for_collector():
     
-    query="SELECT * from Tracking where Status['Type']='등록';"
+    query="SELECT * from PO"
     cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query))
     return cursor
 
+
+
 def select_for_po(po_pk):
     potohash=hashlib.sha256(po_pk.encode()).hexdigest()
-    query="SELECT data, metadata.txTime as discharge_time FROM _ql_committed_Tracking where data.PO_id=?;"
+    query="SELECT t as tracking_info, p.data.Discharge_date from Tracking as t join history(PO) as p on t.QR_id = p.data.QR_id where t.PO_id=?"
     cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query,potohash))
     return cursor
 

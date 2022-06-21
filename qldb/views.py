@@ -92,22 +92,33 @@ def discharge_info(request):
 
 @api_view(['PUT']) 
 def collector_pickup(request): # Status.Type, Status.From, Status.To 변경, 중상이 가져감
-    # body에 tracking_id랑 state는 필수
+    
     body=json.loads(request.body)
-    # print(body)
-    collector_modify_status(body,request.user.phone_num)
+    nowuser_pk=request.user.phone_num
+    potohash=hashlib.sha256(body['PO_id'].encode()).hexdigest()
+    pickquery="SELECT QR_id, Can_kg from Tracking where PO_id=? and Status['To']='' and Status['Type'] in ('등록','수정') "
+    trackings = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(pickquery,potohash))
+    for tracking in trackings:
+            #요청은 수거, 수정, 거부 3개임
+        body['Tracking']=tracking #tracking안에는 QR_id랑 Can_kg가 들어있음
+        collector_modify_status(body,nowuser_pk)
   
     return HttpResponseRedirect(reverse("qldb:collector_com_pickup_page"))
 
-# ---------------------- 중상 폐식용유 거부 --------------------------
+# ---------------------- 중상 폐식용유 정보 수정 or 거부 --------------------------
 
 @api_view(['PUT'])
-def collector_reject(request):
-    body=json.loads(request.body) #tracking_id만 넘어오면될듯 거부해야하니까
-    collector_modify_status(body,request.user.phone_num)
-    cursor=select_po_for_collector() #거절하고 다른 등록중 식당 정보
+def collector_update_or_reject_oil_info(request):
+    body=json.loads(request.body)
+    nowuser_pk=request.user.phone_num
     
-    return Response(cursor,status=status.HTTP_201_CREATED)
+    for tracking in body['Tracking']:
+        collector_modify_status(tracking,nowuser_pk)
+    potohash=hashlib.sha256(body['PO_id'].encode()).hexdigest()
+    
+    return HttpResponseRedirect(reverse("qldb:collector_watch_po_oil_status_page",potohash))
+    # return Response(status=status.HTTP_201_CREATED)
+
 
 # ---------------------- 좌상 폐식용유 수거 --------------------------
 
@@ -132,12 +143,7 @@ def com_reject(request):
     com_modify_status(body,request.user.phone_num)
     return Response(status=status.HTTP_201_CREATED)
 
-# ---------------------- 폐식용유 정보 수정 --------------------------
 
-@api_view(['PUT'])
-def update_info(request):
-    
-    return Response(status=status.HTTP_201_CREATED)
 
 
 # ---------------------- 식당 첫페이지 - 자신이 올린 폐식용유의 현재까지의 상태 --------------------------
@@ -147,12 +153,19 @@ def po_first_page(request):
     cursor=select_for_po(request.user.phone_num)
     return Response(cursor,status=status.HTTP_200_OK)
 
-# ---------------------- 중상 첫페이지 - "등록" 상태의 식당 리스트 중상 열람  --------------------------
-
-@api_view(['GET'])   
+# ---------------------- 중상 첫페이지 - 등록 or 수정 상태의 오일을 가진 식당 정보 --------------------------
+@api_view(['GET'])
 def collector_first_page(request):
     cursor=select_po_for_collector()
- 
+    return Response(cursor,status=status.HTTP_200_OK)
+    
+
+# ---------------------- 중상이 식당 선택 후 페이지 - 해당식당에 대한 "등록" or "수정" 상태의 폐식용유 중상 열람  --------------------------
+
+@api_view(['GET'])   
+def collector_watch_po_oil_status_page(request,po_hash):
+    # get url에서 param 암호화해야함
+    cursor=select_po_oil_status_for_collector(po_hash)
     return Response(cursor,status=status.HTTP_200_OK)
 
 # ---------------------- 중상 + 좌상 현재까지 자신들의 수거 목록 리스트 -> 수거 후에 이 페이지로 넘어감   --------------------------

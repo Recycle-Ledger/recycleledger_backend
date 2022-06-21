@@ -25,50 +25,43 @@ def update_po_document(driver,po_body):
 
 # ----------------------
 def collector_modify_status(body,nowuser_pk): #중상용 from to type 변경 함수
-    try:
-        potohash=hashlib.sha256(body['PO_id'].encode()).hexdigest()
-        pickquery="SELECT t.QR_id, t.Can_kg from Tracking as t join history(PO) as p on t.QR_id = p.data.QR_id where p.data.PO_id=? and t.Status['To']='' "
-        trackings = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(pickquery,potohash))
-        collectortohash=hashlib.sha256(nowuser_pk.encode()).hexdigest()
-        for tracking in trackings:
-            
-            try:
-                if body['Status']['Type']=="수거":
-                    query="UPDATE Tracking set Status['Type'] =?, Status['To']=?, Status_change_time=? where QR_id=?"
-                    cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement
-                                                            (query,
-                                                            body['Status']['Type'],
-                                                            collectortohash,
-                                                            body['Status_change_time'],
-                                                            tracking['QR_id']))    
-                    User=get_user_model()
-                    collector=get_object_or_404(User,phone_num=nowuser_pk)
-                    collector.profile.total_KG  = collector.profile.total_KG + tracking['Can_kg']
-                    collector.save()
-                    
-                elif body['Status']['Type']=="수정":
-                    query="UPDATE Tracking set Status['Type'] =?, Status['To']=?, Can_kg=?, Status_change_time=? where QR_id=?"
-                    cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement
-                                                            (query,
-                                                            "수거",
-                                                            collectortohash,
-                                                            body['Can_kg'],
-                                                            body['Status_change_time'],
-                                                            tracking['QR_id']))    
-                    User=get_user_model()
-                    collector=get_object_or_404(User,phone_num=nowuser_pk)
-                    collector.profile.total_KG  = collector.profile.total_KG + body['Can_kg']
-                    collector.save()
+    try: 
+        try:
+            if body['Status']['Type']=="수거":
+                collectortohash=hashlib.sha256(nowuser_pk.encode()).hexdigest()
                 
-                elif body['Status']['Type']=="거부":
-                    query="UPDATE Tracking set Status['Type'] =? where QR_id=?"
-                    cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement
-                                                            (query,
-                                                            body['Status']['Type'],
-                                                            tracking['QR_id']))   
-            except Exception as e:
-                logger.exception('Error updating Tracking.')
-                raise e 
+                query="UPDATE Tracking set Status['Type'] =?, Status['To']=?, Status_change_time=? where QR_id=?"
+                cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement
+                                                        (query,
+                                                        body['Status']['Type'], #수거
+                                                        collectortohash,
+                                                        body['Status_change_time'],
+                                                        body['Tracking']['QR_id']))    
+                User=get_user_model()
+                collector=get_object_or_404(User,phone_num=nowuser_pk)
+                collector.profile.total_KG  = collector.profile.total_KG + body['Tracking']['Can_kg']
+                collector.save()
+                
+                
+            elif body['Status']['Type']=="수정":
+                query="UPDATE Tracking set Status['Type'] =?, Can_kg=?, Status_change_time=? where QR_id=?"
+                cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement
+                                                        (query,
+                                                        body['Status']['Type'], #수정
+                                                        body['Can_kg'],
+                                                        body['Status_change_time'],
+                                                        body['Tracking']['QR_id']))    
+             
+            
+            elif body['Status']['Type']=="거부":
+                query="UPDATE Tracking set Status['Type'] =? where QR_id=?"
+                cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement
+                                                        (query,
+                                                        body['Status']['Type'],
+                                                        body['Tracking']['QR_id']))   
+        except Exception as e:
+            logger.exception('Error updating Tracking.')
+            raise e 
     except Exception as e:
         logger.exception('Error selecting Tracking.')
         raise e 

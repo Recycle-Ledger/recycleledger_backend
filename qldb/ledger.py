@@ -9,6 +9,7 @@ class QLDB:
     STATUS_INDEX_NAME = "Status" # type,from,to
     CAN_KG_INDEX_NAME = "Can_kg" # 폐식용유 캔 kg
     STATUS_CHANGE_TIME_INDEX_NAME = "Status_change_time" #status type에 따라 변경되는 시간
+    PO_ID_INDEX_NAME = "PO_id" #식당 해시
 
  
     # 식당 테이블
