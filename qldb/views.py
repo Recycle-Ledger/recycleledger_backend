@@ -28,42 +28,34 @@ def create_ledger(request):
     except Exception as e:
         logger.exception('Unable to create the ledger!')
         raise e
-   
     return Response(status=status.HTTP_201_CREATED)
 
 @api_view(['POST'])
 def create_table(request):
     try: 
         create_qldb_table(qldb_driver, QLDB.TRACKING_TABLE_NAME)
-        create_qldb_table(qldb_driver, QLDB.IMAGE_TABLE_NAME)
         create_qldb_table(qldb_driver, QLDB.PO_TABLE_NAME)
-
         logger.info('Tables created successfully.')
     except Exception as e:
         logger.exception('Errors creating tables.')
         raise e
     return Response(status=status.HTTP_201_CREATED)
+
 @api_view(['POST'])
 def create_index(request):
     logger.info('Creating indexes on all tables...')
     try:
         # 트래킹 테이블 구성
-        create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.TRACKING_ID_INDEX_NAME)
+        create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.QR_ID_INDEX_NAME)
         create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.STATUS_INDEX_NAME)
-        create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.CAN_INFO_INDEX_NAME)
-        create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.IMAGE_ID_INDEX_NAME)
-        create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.PO_ID_INDEX_NAME)
-
-        # 이미지 테이블 구성
-        create_table_index(qldb_driver, QLDB.IMAGE_TABLE_NAME, QLDB.TRACKING_ID_INDEX_NAME)
-        create_table_index(qldb_driver, QLDB.IMAGE_TABLE_NAME, QLDB.IMAGE_URL_INDEX_NAME)
-        create_table_index(qldb_driver, QLDB.IMAGE_TABLE_NAME, QLDB.IMAGE_ID_INDEX_NAME)
+        create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.CAN_KG_INDEX_NAME)
+        create_table_index(qldb_driver, QLDB.TRACKING_TABLE_NAME, QLDB.STATUS_CHANGE_TIME_INDEX_NAME)
 
         # 식당 테이블 구성 
+        create_table_index(qldb_driver, QLDB.PO_TABLE_NAME, QLDB.QR_ID_INDEX_NAME)
         create_table_index(qldb_driver, QLDB.PO_TABLE_NAME, QLDB.PO_ID_INDEX_NAME)
         create_table_index(qldb_driver, QLDB.PO_TABLE_NAME, QLDB.PO_INFO_INDEX_NAME)
         create_table_index(qldb_driver, QLDB.PO_TABLE_NAME, QLDB.OPEN_STATUS_INDEX_NAME)
-        create_table_index(qldb_driver, QLDB.PO_TABLE_NAME, QLDB.TRACKING_ID_INDEX_NAME)
         create_table_index(qldb_driver, QLDB.PO_TABLE_NAME, QLDB.DISCHARGE_DATE_INDEX_NAME)
 
         logger.info('Indexes created successfully.')
@@ -73,81 +65,101 @@ def create_index(request):
     return Response(status=status.HTTP_201_CREATED)
 
 
-# ---------------------- 식당 폐식용유 등록 -> 등록 후 po_first_page로 redirect --------------------------
-
-@api_view(['POST']) #PO가 있는경우는 update -> 요청은 update인데 실제 역할은 같은 집에서 새로운 식용유 내놓아서 바뀐정보를 담는것
-def insert_first_info(request):
+# ---------------------- 식당 폐식용유 등록 or 수정 -> 등록 후 po_first_page로 redirect --------------------------
+# PO가 있는경우는 update -> 요청은 update인데 실제 역할은 같은 집에서 새로운 식용유 내놓아서 바뀐정보를 담는것
+# QR_id 가 있는경우 수정으로
+@api_view(['POST','PUT']) 
+def discharge_info(request):
     body=json.loads(request.body)
-    # print(body)
-    po_pk=request.user.phone_num
+    nowuser=request.user
+    if nowuser.job=='식당':
+        po_pk=nowuser.phone_num
+    elif nowuser.job =='직원':
+        po_pk=nowuser.User.phone_num
+        
     potohash=hashlib.sha256(po_pk.encode()).hexdigest()
-    body["Tracking"]["PO_id"]=potohash
-    body["Tracking"]["Status"]["From"]=potohash
-    body["PO"]["PO_id"]=potohash
-    # print(POtohash)
-    # print(hashlib.sha256(me_PO.phone_num.encode()).hexdigest())
-    insert_documents(qldb_driver, QLDB.TRACKING_TABLE_NAME, body['Tracking'])
-    if get_num_for_PO_id(body['PO']['PO_id']):
-        update_po_document(qldb_driver,body['PO']) #이부분이 PO 테이블 업데이트(트랜잭션 추가)
-    else:
-        insert_documents(qldb_driver, QLDB.PO_TABLE_NAME, body['PO'])
-    insert_documents(qldb_driver, QLDB.IMAGE_TABLE_NAME, body['Image'])
+        
+      
+    for tracking_body in body['Tracking']:
+        tracking_body['Status']['From']=potohash
+        tracking_body['PO_id']=potohash
+        if get_num_for_QR_id(tracking_body['QR_id']):
+            tracking_body['Status']['Type']='수정'
+            update_tracking_documnet(tracking_body)
+        else:
+            insert_documents(qldb_driver, QLDB.TRACKING_TABLE_NAME, tracking_body)
     
-
-    # cursor=select_for_po(po_pk)
-    # return Response(cursor,status=status.HTTP_201_CREATED)
+    if 'PO' in body: # 거부 수정시에는 po 정보를 넘기지않음
+        for po_body in body['PO']:
+            po_body['PO_id']=potohash
+            po_body['PO_info']['주소']=nowuser.address
+            po_body['PO_info']['상호명']=nowuser.po_name
+            if get_num_for_PO_id(po_body['PO_id']):
+                update_po_document(po_body) 
+            else:
+                insert_documents(qldb_driver, QLDB.PO_TABLE_NAME, po_body)
+    
     return HttpResponseRedirect(reverse("qldb:po_first_page"))
 
-# ---------------------- 중상 폐식용유 수거 -> 수거 후 collector_com_pickup_page로 redirect --------------------------
+
+
+# ---------------------- 중상 폐식용유 수거 -> 수거 후 자신이 이때까지 수거 해온 폐식용유 데이터로 redirect --------------------------
 
 @api_view(['PUT']) 
-def collector_pickup(request): # Status.Type, Status.From, Status.To 변경, 중상이 가져감
-    # body에 tracking_id랑 state는 필수
+def collector_pickup(request): 
+    
     body=json.loads(request.body)
-    # print(body)
-    collector_modify_status(body,request.user.phone_num)
+    nowuser_pk=request.user.phone_num
+    # potohash=hashlib.sha256(body['PO_id'].encode()).hexdigest()
+    pickquery="SELECT QR_id, Can_kg from Tracking where PO_id=? and Status['To']='' and Status['Type'] in ('등록','수정') "
+    trackings = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(pickquery,body['PO_id']))
+    
+    for tracking in trackings:
+        print(tracking['QR_id'])
+        body['Tracking']=tracking #tracking안에는 QR_id랑 Can_kg가 들어있음
+        collector_modify_status(body,nowuser_pk)
   
     return HttpResponseRedirect(reverse("qldb:collector_com_pickup_page"))
 
-# ---------------------- 중상 폐식용유 거부 --------------------------
+# ---------------------- 중상 폐식용유 정보 수정 or 거부 --------------------------
 
 @api_view(['PUT'])
-def collector_reject(request):
-    body=json.loads(request.body) #tracking_id만 넘어오면될듯 거부해야하니까
-    collector_modify_status(body,request.user.phone_num)
-    cursor=select_po_for_collector() #거절하고 다른 등록중 식당 정보
+def collector_update_or_reject_oil_info(request):
+    body=json.loads(request.body)
+    nowuser_pk=request.user.phone_num
     
-    return Response(cursor,status=status.HTTP_201_CREATED)
+    for tracking in body['Tracking']:
+        collector_modify_status(tracking,nowuser_pk)
+    # potohash=hashlib.sha256(body['PO_id'].encode()).hexdigest()
+    
+    return HttpResponseRedirect(reverse("qldb:collector_watch_po_oil_status_page",args=[body['PO_id']]))
+   
 
-# ---------------------- 좌상 폐식용유 수거 --------------------------
+
+# ---------------------- 좌상 폐식용유 수거 -> 수거 후 자신이 이때까지 수거 해온 폐식용유 데이터로 redirect --------------------------
 
 @api_view(['PUT']) #좌상이 중상꺼 다 모아서 처리
 def com_pickup(request):
-    body=json.loads(request.body) #중상 pk인 핸드폰 번호 넘어옴
-    com_modify_status(body,request.user.phone_num)
+    body=json.loads(request.body) 
+    nowuser_pk=request.user.phone_num
+    
+    # collectortohash=hashlib.sha256(body['Collector_id'].encode()).hexdigest()
+    # trackings=select_collector_pickup_lists(collectortohash)
+    # 이부분은 com_watch_collector_pickup_lists 이부분에서 넘겨받음
+    
+    for tracking in body['Trackings']:
+        body['Tracking']=tracking
+        com_modify_status(body,nowuser_pk)
     
     User=get_user_model()
-    collector=get_object_or_404(User,phone_num=body['Collector_phone_num']) 
+    collector=get_object_or_404(User,phone_num=body['Collector_id']) 
     collector.profile.total_QTY=0
     collector.profile.total_KG=0
     collector.save()
     
     return HttpResponseRedirect(reverse("qldb:collector_com_pickup_page"))
 
-# ---------------------- 좌상 폐식용유 거부 --------------------------
 
-@api_view(['PUT'])
-def com_reject(request):
-    body=json.loads(request.body)
-    com_modify_status(body,request.user.phone_num)
-    return Response(status=status.HTTP_201_CREATED)
-
-# ---------------------- 폐식용유 정보 수정 --------------------------
-
-@api_view(['PUT'])
-def update_info(request):
-    
-    return Response(status=status.HTTP_201_CREATED)
 
 
 # ---------------------- 식당 첫페이지 - 자신이 올린 폐식용유의 현재까지의 상태 --------------------------
@@ -155,30 +167,39 @@ def update_info(request):
 @api_view(['GET']) 
 def po_first_page(request): 
     cursor=select_for_po(request.user.phone_num)
-    return Response(cursor)
+    return Response(cursor,status=status.HTTP_200_OK)
 
-# ---------------------- 중상 첫페이지 -"등록" 상태의 식당 리스트 중상 열람  --------------------------
-
-@api_view(['GET'])   
+# ---------------------- 중상 첫페이지 - 등록 or 수정 상태의 오일을 가진 식당 정보 --------------------------
+@api_view(['GET'])
 def collector_first_page(request):
     cursor=select_po_for_collector()
-    return Response(cursor)
+    return Response(cursor,status=status.HTTP_200_OK)
+    
+
+# ---------------------- 중상이 식당 선택 후 페이지 - 해당식당에 대한 "등록" or "수정" 상태의 폐식용유 중상 열람  --------------------------
+
+@api_view(['GET'])   
+def collector_watch_po_oil_status_page(request,po_hash):
+    # get url에서 param 암호화해야함
+    
+    cursor=select_po_oil_status_for_collector(po_hash)
+    return Response(cursor,status=status.HTTP_200_OK)
 
 # ---------------------- 중상 + 좌상 현재까지 자신들의 수거 목록 리스트 -> 수거 후에 이 페이지로 넘어감   --------------------------
 
 @api_view(['GET']) 
 def collector_com_pickup_page(request):
     cursor=select_pickup_for_collector_com_pk(request.user.phone_num)
-    return Response(cursor)
+    return Response(cursor,status=status.HTTP_200_OK)
     
 
 # ---------------------- 좌상이 중상 수거 내역 확인 페이지 --------------------------
 @api_view(['GET'])
-def collector_com_QTY_KG_info(request,collector_pk):
-    User=get_user_model()
-    collector=get_object_or_404(User,phone_num=collector_pk)
-    print(collector.profile.total_KG)
-    print(collector.profile.total_QTY)
+def com_watch_collector_pickup_lists(request,collector_hash):
+    
+    trackings=select_collector_pickup_lists(collector_hash)
+    
+    return Response(trackings,status=status.HTTP_200_OK)
 
 
 # 테이블 수 체크
@@ -200,3 +221,10 @@ def collector_com_QTY_KG_info(request,collector_pk):
 #     print('first')
 #     return HttpResponseRedirect(reverse("qldb:check2"))
 
+
+
+# select t.QR_id, t.Status, t.Can_kg, t.Status_change_time, p.data.PO_id, p.data.PO_info, p.data.Open_status, p.data.Discharge_date  from Tracking as t join history(PO) as p on t.QR_id = p.data.QR_id;
+# 최종상태의 qr에 대한 po 조인값
+
+# select t.data.QR_id, t.data.Status, t.data.Can_kg, t.data.Status_change_time, p.data.PO_id, p.data.PO_info, p.data.Open_status, p.data.Discharge_date  from history(Tracking) as t join history(PO) as p on t.data.QR_id = p.data.QR_id;
+# QR_id에 대한 Tracking history를 볼때 po 조인값

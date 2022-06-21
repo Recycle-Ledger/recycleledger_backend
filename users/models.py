@@ -102,7 +102,7 @@ class User(AbstractBaseUser,PermissionsMixin):
 #profile 부분
 class Profile(models.Model):
     user = models.OneToOneField(User,on_delete=models.CASCADE)
-    total_QTY= models.IntegerField(default=0)
+    # total_QTY= models.IntegerField(default=0)
     total_KG= models.IntegerField(default=0)
 
 @receiver(post_save, sender=User)
