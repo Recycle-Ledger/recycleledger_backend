@@ -24,9 +24,7 @@ urlpatterns = [
     # ------------- 좌상 --------------
     # 수거 
     path('com_pickup', com_pickup, name='com_pickup'),
-    # 거부
-    path('com_reject', com_reject, name='com_reject'),
-    
+
     
     # 페이지(GET)
     path('po_first_page', po_first_page, name='po_first_page'), #식당 첫페이지

@@ -91,7 +91,7 @@ def discharge_info(request):
 # ---------------------- 중상 폐식용유 수거 -> 수거 후 collector_com_pickup_page로 redirect --------------------------
 
 @api_view(['PUT']) 
-def collector_pickup(request): # Status.Type, Status.From, Status.To 변경, 중상이 가져감
+def collector_pickup(request): 
     
     body=json.loads(request.body)
     nowuser_pk=request.user.phone_num
@@ -99,7 +99,6 @@ def collector_pickup(request): # Status.Type, Status.From, Status.To 변경, 중
     pickquery="SELECT QR_id, Can_kg from Tracking where PO_id=? and Status['To']='' and Status['Type'] in ('등록','수정') "
     trackings = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(pickquery,potohash))
     for tracking in trackings:
-            #요청은 수거, 수정, 거부 3개임
         body['Tracking']=tracking #tracking안에는 QR_id랑 Can_kg가 들어있음
         collector_modify_status(body,nowuser_pk)
   
@@ -117,31 +116,34 @@ def collector_update_or_reject_oil_info(request):
     potohash=hashlib.sha256(body['PO_id'].encode()).hexdigest()
     
     return HttpResponseRedirect(reverse("qldb:collector_watch_po_oil_status_page",potohash))
-    # return Response(status=status.HTTP_201_CREATED)
+   
 
 
 # ---------------------- 좌상 폐식용유 수거 --------------------------
 
 @api_view(['PUT']) #좌상이 중상꺼 다 모아서 처리
 def com_pickup(request):
-    body=json.loads(request.body) #중상 pk인 핸드폰 번호 넘어옴
-    com_modify_status(body,request.user.phone_num)
+    body=json.loads(request.body) 
+    nowuser_pk=request.user.phone_num
+    
+    collectortohash=hashlib.sha256(body['Collector_id'].encode()).hexdigest()
+    
+    pickquery="SELECT QR_id, Can_kg, Status['To'] from Tracking where Status['To']=? and Status['Type']='수거' "
+    trackings = qldb_driver.execute_lambda(lambda executor: executor.execute_statement
+                                                (pickquery,
+                                                collectortohash))
+    for tracking in trackings:
+        body['Tracking']=tracking
+        com_modify_status(body,nowuser_pk)
     
     User=get_user_model()
-    collector=get_object_or_404(User,phone_num=body['Collector_phone_num']) 
+    collector=get_object_or_404(User,phone_num=body['Collector_id']) 
     collector.profile.total_QTY=0
     collector.profile.total_KG=0
     collector.save()
     
     return HttpResponseRedirect(reverse("qldb:collector_com_pickup_page"))
 
-# ---------------------- 좌상 폐식용유 거부 --------------------------
-
-@api_view(['PUT'])
-def com_reject(request):
-    body=json.loads(request.body)
-    com_modify_status(body,request.user.phone_num)
-    return Response(status=status.HTTP_201_CREATED)
 
 
 
