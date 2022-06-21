@@ -81,6 +81,7 @@ def discharge_info(request):
     potohash=hashlib.sha256(po_pk.encode()).hexdigest()
     for po_body in body['PO']:
         po_body['PO_id']=potohash
+        po_body['Status']['From']=potohash
         if get_num_for_PO_id(po_body['PO_id']):
             update_po_document(qldb_driver,po_body) 
         else:
@@ -88,7 +89,7 @@ def discharge_info(request):
     
     return HttpResponseRedirect(reverse("qldb:po_first_page"))
 
-# ---------------------- 중상 폐식용유 수거 -> 수거 후 collector_com_pickup_page로 redirect --------------------------
+# ---------------------- 중상 폐식용유 수거 -> 수거 후 자신이 이때까지 수거 해온 폐식용유 데이터로 redirect --------------------------
 
 @api_view(['PUT']) 
 def collector_pickup(request): 
@@ -119,20 +120,18 @@ def collector_update_or_reject_oil_info(request):
    
 
 
-# ---------------------- 좌상 폐식용유 수거 --------------------------
+# ---------------------- 좌상 폐식용유 수거 -> 수거 후 자신이 이때까지 수거 해온 폐식용유 데이터로 redirect --------------------------
 
 @api_view(['PUT']) #좌상이 중상꺼 다 모아서 처리
 def com_pickup(request):
     body=json.loads(request.body) 
     nowuser_pk=request.user.phone_num
     
-    collectortohash=hashlib.sha256(body['Collector_id'].encode()).hexdigest()
+    # collectortohash=hashlib.sha256(body['Collector_id'].encode()).hexdigest()
+    # trackings=select_collector_pickup_lists(collectortohash)
+    # 이부분은 com_watch_collector_pickup_lists 이부분에서 넘겨받음
     
-    pickquery="SELECT QR_id, Can_kg, Status['To'] from Tracking where Status['To']=? and Status['Type']='수거' "
-    trackings = qldb_driver.execute_lambda(lambda executor: executor.execute_statement
-                                                (pickquery,
-                                                collectortohash))
-    for tracking in trackings:
+    for tracking in body['Trackings']:
         body['Tracking']=tracking
         com_modify_status(body,nowuser_pk)
     
@@ -143,7 +142,6 @@ def com_pickup(request):
     collector.save()
     
     return HttpResponseRedirect(reverse("qldb:collector_com_pickup_page"))
-
 
 
 
@@ -180,12 +178,11 @@ def collector_com_pickup_page(request):
 
 # ---------------------- 좌상이 중상 수거 내역 확인 페이지 --------------------------
 @api_view(['GET'])
-def collector_com_QTY_KG_info(request,collector_pk):
-    User=get_user_model()
-    collector=get_object_or_404(User,phone_num=collector_pk)
-    print(collector.profile.total_KG)
-    print(collector.profile.total_QTY)
-    return Response(status=status.HTTP_200_OK)
+def com_watch_collector_pickup_lists(request,collector_hash):
+    
+    trackings=select_collector_pickup_lists(collector_hash)
+    
+    return Response(trackings,status=status.HTTP_200_OK)
 
 
 # 테이블 수 체크
@@ -207,9 +204,10 @@ def collector_com_QTY_KG_info(request,collector_pk):
 #     print('first')
 #     return HttpResponseRedirect(reverse("qldb:check2"))
 
+
+
 # select t.QR_id, t.Status, t.Can_kg, t.Status_change_time, p.data.PO_id, p.data.PO_info, p.data.Open_status, p.data.Discharge_date  from Tracking as t join history(PO) as p on t.QR_id = p.data.QR_id;
 # 최종상태의 qr에 대한 po 조인값
-
 
 # select t.data.QR_id, t.data.Status, t.data.Can_kg, t.data.Status_change_time, p.data.PO_id, p.data.PO_info, p.data.Open_status, p.data.Discharge_date  from history(Tracking) as t join history(PO) as p on t.data.QR_id = p.data.QR_id;
 # QR_id에 대한 Tracking history를 볼때 po 조인값

@@ -74,7 +74,7 @@ def com_modify_status(body,nowuser_pk):
             if body['Status']['Type']=="수거":        
                 
                 comtohash=hashlib.sha256(nowuser_pk.encode()).hexdigest()
-                    
+                
                 query ="UPDATE Tracking set Status['Type'] =?, Status['From']=?, Status['To']=? where QR_id=?"
                 cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement
                                                         (query,
