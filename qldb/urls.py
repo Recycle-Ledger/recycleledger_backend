@@ -10,10 +10,14 @@ urlpatterns = [
     path('index', create_index, name='index'),
     
     # ------------- 식당 --------------
-    # 폐식용유 등록
+    # 첫페이지(GET)
+    path('po_first_page', po_first_page, name='po_first_page'), 
+    # 폐식용유 등록 (POST)
     path('discharge_info', discharge_info, name='discharge_info'),
     
     # ------------- 중상 --------------
+    # 첫페이지(GET)
+    path('collector_first_page', collector_first_page, name='collector_first_page'), 
     # 수거 (PUT)
     path('collector_pickup', collector_pickup, name='collector_pickup'),
     # 수정 or 거부 (PUT)
@@ -22,18 +26,17 @@ urlpatterns = [
     path('collector_watch_po_oil_status_page/<str:po_hash>', collector_watch_po_oil_status_page, name='collector_watch_po_oil_status_page'), 
 
     # ------------- 좌상 --------------
-    # 수거 
+    # 수거 (PUT)
     path('com_pickup', com_pickup, name='com_pickup'),
+    # 중상 수거 내역 확인 페이지(GET)
+    path('com_watch_collector_pickup_lists/<str:collector_hash>', com_watch_collector_pickup_lists, name='com_watch_collector_pickup_lists'), 
+    
 
     
-    # 페이지(GET)
-    path('po_first_page', po_first_page, name='po_first_page'), #식당 첫페이지
-    
-    
-    
-    path('collector_com_pickup_page', collector_com_pickup_page, name='collector_com_pickup_page'), #중상 좌상 수거목록 페이지
+    # ------------- 좌상 + 중상 --------------
+    # 중상 좌상 수거 후 자신 수거 내역 페이지(GET)
+    path('collector_com_pickup_page', collector_com_pickup_page, name='collector_com_pickup_page'), 
   
-    path('collector_com_QTY_KG_info/<int:collector_pk>',collector_com_QTY_KG_info,name='collector_com_QTY_KG_info'), #좌상이보는 중상이 모아온 폐식용유 총 수량
   
   
    

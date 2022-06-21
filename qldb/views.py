@@ -65,9 +65,10 @@ def create_index(request):
     return Response(status=status.HTTP_201_CREATED)
 
 
-# ---------------------- 식당 폐식용유 등록 -> 등록 후 po_first_page로 redirect --------------------------
-
-@api_view(['POST']) #PO가 있는경우는 update -> 요청은 update인데 실제 역할은 같은 집에서 새로운 식용유 내놓아서 바뀐정보를 담는것
+# ---------------------- 식당 폐식용유 등록 or 수정 -> 등록 후 po_first_page로 redirect --------------------------
+# PO가 있는경우는 update -> 요청은 update인데 실제 역할은 같은 집에서 새로운 식용유 내놓아서 바뀐정보를 담는것
+# QR_id 가 있는경우 수정으로
+@api_view(['POST']) 
 def discharge_info(request):
     body=json.loads(request.body)
     nowuser=request.user
@@ -76,18 +77,28 @@ def discharge_info(request):
     elif nowuser.job =='직원':
         po_pk=nowuser.User.phone_num
         
-    #QR정보 기입
-    insert_documents(qldb_driver, QLDB.TRACKING_TABLE_NAME, body['Tracking'])
     potohash=hashlib.sha256(po_pk.encode()).hexdigest()
+        
+      
+    for tracking_body in body['Tracking']:
+        tracking_body['Status']['From']=potohash
+        if get_num_for_QR_id(tracking_body['QR_id']):
+            tracking_body['Status']['Type']='수정'
+            update_tracking_documnet(tracking_body)
+        else:
+            insert_documents(qldb_driver, QLDB.TRACKING_TABLE_NAME, tracking_body)
+    
+    
     for po_body in body['PO']:
         po_body['PO_id']=potohash
-        po_body['Status']['From']=potohash
         if get_num_for_PO_id(po_body['PO_id']):
-            update_po_document(qldb_driver,po_body) 
+            update_po_document(po_body) 
         else:
             insert_documents(qldb_driver, QLDB.PO_TABLE_NAME, po_body)
     
     return HttpResponseRedirect(reverse("qldb:po_first_page"))
+
+
 
 # ---------------------- 중상 폐식용유 수거 -> 수거 후 자신이 이때까지 수거 해온 폐식용유 데이터로 redirect --------------------------
 

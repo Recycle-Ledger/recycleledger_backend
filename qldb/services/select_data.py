@@ -17,6 +17,22 @@ def get_num_for_PO_id(po_id):
     except Exception as e:
         logger.exception('Error getting "count" for PO_id.')
         raise e
+# ---------- 식당 시점 : 해당 QR_id 존재여부 확인 함수, 있으면 True 없으면 False -------
+def get_num_for_QR_id(qr_id): 
+    try:
+        query = "SELECT COUNT(*) as num_QR FROM Tracking WHERE QR_id = ?"
+        # group by가 없음 
+        cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query, qr_id))
+        if next(cursor)['num_QR']>0:
+            logger.info('QR value exist')
+            return True
+        else:
+            logger.info('No PO value')  
+            return False 
+             
+    except Exception as e:
+        logger.exception('Error getting "count" for QR_id.')
+        raise e
     
 # ----------- 식당 시점 : 결과값에 대한 documentId 리스트로 반환 -------- 안중요함 이부분은 
 def get_document_ids_from_dml_results(result):
