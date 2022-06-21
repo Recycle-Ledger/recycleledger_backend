@@ -7,6 +7,9 @@ def convert_object_to_ion(py_object):
     # print(type(ion_object))
     return ion_object
 
+
+# ---------------------- 식당용 폐식용유 정보 삽입 함수 ------------
+
 def insert_documents(driver, table_name, documents):
     try:
         logger.info('Inserting some documents in the {} table...'.format(table_name))
