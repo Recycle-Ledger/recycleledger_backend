@@ -12,7 +12,7 @@ urlpatterns = [
     # ------------- 식당 --------------
     # 첫페이지(GET)
     path('po_first_page', po_first_page, name='po_first_page'), 
-    # 폐식용유 등록 (POST)
+    # 폐식용유 등록 (POST) + 거부 수정(PUT)
     path('discharge_info', discharge_info, name='discharge_info'),
     
     # ------------- 중상 --------------

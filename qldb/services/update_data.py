@@ -65,7 +65,7 @@ def collector_modify_status(body,nowuser_pk):
                                                         body['Status']['Type'], #수정
                                                         body['Can_kg'],
                                                         body['Status_change_time'],
-                                                        body['Tracking']['QR_id']))    
+                                                        body['QR_id']))    
              
             
             elif body['Status']['Type']=="거부":
@@ -73,7 +73,7 @@ def collector_modify_status(body,nowuser_pk):
                 cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement
                                                         (query,
                                                         body['Status']['Type'],
-                                                        body['Tracking']['QR_id']))   
+                                                        body['QR_id']))   
         except Exception as e:
             logger.exception('Error updating Tracking.')
             raise e 

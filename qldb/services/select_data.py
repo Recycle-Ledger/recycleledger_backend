@@ -51,15 +51,18 @@ def select_for_po(po_pk):
 # ----------- 중상시점: 첫페이지, 등록, 수정 상태의 오일을 가지고 있는 식당 리스트 반환 -----
 def select_po_for_collector():
     
-    query="SELECT * from PO"
+    query="SELECT PO_id, PO_info, Open_status from PO"
     cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query))
     return cursor
 
 # ------------ 중상시점 : 선택된 식당의 등록, 수정 상태의 폐식용유 상태 리스트 반환 -------
 def select_po_oil_status_for_collector(potohash):
-    
-    query="SELECT * from Tracking where Status['Type'] in ('등록','수정') where PO_id=?"
-    cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query,potohash))
+    try:
+        query="SELECT * from Tracking where Status['Type'] in ('등록','수정') and PO_id=?"
+        cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query,potohash))
+    except Exception as e:
+        logger.info('Error updating document!')
+        raise e 
     return cursor
 
 

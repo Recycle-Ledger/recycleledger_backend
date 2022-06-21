@@ -20,11 +20,11 @@ def user_signup(request): #회원가입
         
         if request.data["job"]=="식당":
             cursor=select_for_po(request.data["phone_num"])
-            cursor = { cs for cs in cursor}
+            cursor = [cs for cs in cursor]
             token['list']=cursor
         elif request.data['job']=="중상":
             cursor=select_po_for_collector()
-            cursor = { cs for cs in cursor}
+            cursor = [ cs for cs in cursor]
             token['list']=cursor
             
         return Response(token,status=status.HTTP_201_CREATED)

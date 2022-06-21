@@ -68,7 +68,7 @@ def create_index(request):
 # ---------------------- 식당 폐식용유 등록 or 수정 -> 등록 후 po_first_page로 redirect --------------------------
 # PO가 있는경우는 update -> 요청은 update인데 실제 역할은 같은 집에서 새로운 식용유 내놓아서 바뀐정보를 담는것
 # QR_id 가 있는경우 수정으로
-@api_view(['POST']) 
+@api_view(['POST','PUT']) 
 def discharge_info(request):
     body=json.loads(request.body)
     nowuser=request.user
@@ -82,19 +82,22 @@ def discharge_info(request):
       
     for tracking_body in body['Tracking']:
         tracking_body['Status']['From']=potohash
+        tracking_body['PO_id']=potohash
         if get_num_for_QR_id(tracking_body['QR_id']):
             tracking_body['Status']['Type']='수정'
             update_tracking_documnet(tracking_body)
         else:
             insert_documents(qldb_driver, QLDB.TRACKING_TABLE_NAME, tracking_body)
     
-    
-    for po_body in body['PO']:
-        po_body['PO_id']=potohash
-        if get_num_for_PO_id(po_body['PO_id']):
-            update_po_document(po_body) 
-        else:
-            insert_documents(qldb_driver, QLDB.PO_TABLE_NAME, po_body)
+    if 'PO' in body: # 거부 수정시에는 po 정보를 넘기지않음
+        for po_body in body['PO']:
+            po_body['PO_id']=potohash
+            po_body['PO_info']['주소']=nowuser.address
+            po_body['PO_info']['상호명']=nowuser.po_name
+            if get_num_for_PO_id(po_body['PO_id']):
+                update_po_document(po_body) 
+            else:
+                insert_documents(qldb_driver, QLDB.PO_TABLE_NAME, po_body)
     
     return HttpResponseRedirect(reverse("qldb:po_first_page"))
 
@@ -107,10 +110,12 @@ def collector_pickup(request):
     
     body=json.loads(request.body)
     nowuser_pk=request.user.phone_num
-    potohash=hashlib.sha256(body['PO_id'].encode()).hexdigest()
+    # potohash=hashlib.sha256(body['PO_id'].encode()).hexdigest()
     pickquery="SELECT QR_id, Can_kg from Tracking where PO_id=? and Status['To']='' and Status['Type'] in ('등록','수정') "
-    trackings = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(pickquery,potohash))
+    trackings = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(pickquery,body['PO_id']))
+    
     for tracking in trackings:
+        print(tracking['QR_id'])
         body['Tracking']=tracking #tracking안에는 QR_id랑 Can_kg가 들어있음
         collector_modify_status(body,nowuser_pk)
   
@@ -125,9 +130,9 @@ def collector_update_or_reject_oil_info(request):
     
     for tracking in body['Tracking']:
         collector_modify_status(tracking,nowuser_pk)
-    potohash=hashlib.sha256(body['PO_id'].encode()).hexdigest()
+    # potohash=hashlib.sha256(body['PO_id'].encode()).hexdigest()
     
-    return HttpResponseRedirect(reverse("qldb:collector_watch_po_oil_status_page",potohash))
+    return HttpResponseRedirect(reverse("qldb:collector_watch_po_oil_status_page",args=[body['PO_id']]))
    
 
 
@@ -176,6 +181,7 @@ def collector_first_page(request):
 @api_view(['GET'])   
 def collector_watch_po_oil_status_page(request,po_hash):
     # get url에서 param 암호화해야함
+    
     cursor=select_po_oil_status_for_collector(po_hash)
     return Response(cursor,status=status.HTTP_200_OK)
 
