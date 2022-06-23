@@ -84,15 +84,11 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 # web 용  
 class MyWebTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self,attrs):
-        print("1")
         data = super().validate(attrs)
-        print()
         refresh=self.get_token(self.user)
         data["refresh"]=str(refresh)
         data["access"]=str(refresh.access_token)        
-        # data["wallet_addr"]=self.user.wallet_addr
-        # data["business_num"]=self.user.business_num
-        print(refresh)
+        # print(refresh)
         data['user'] = UserSerializer(self.user).data
         return data
     
@@ -106,3 +102,4 @@ class MyTokenVerifySerializer(TokenVerifySerializer):
         data = {'id': data['user_id']}
         
         return data
+

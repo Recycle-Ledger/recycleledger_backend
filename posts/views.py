@@ -27,14 +27,15 @@ def main(request):
         else:
             a = {"phone_num":phone_num , "password":password}
             serializer_class=MyWebTokenObtainPairSerializer(TokenObtainPairSerializer).validate(a)
-
+            ## refresh token, access token 따로 저장하는 것 적어주기
+            
             job = serializer_class['user']['job']
             if job=="좌상":
                 return render(request,"posts/main_c.html",{"user" : serializer_class['user']})
             elif job=="환경부":
                 query = "SELECT * from history(Tracking)"
                 cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query))
-                return render(request,"posts/main.html",{"user" : serializer_class['user'],"cursor":cursor})
+                return render(request,"posts/main.html",{"user" : serializer_class['user'],"cursor":cursor,"refresh":refresh,"access":refresh.access_token})
             else:
                 return render(request,"posts/main_j.html",{"user" : serializer_class['user']})
 
@@ -94,3 +95,11 @@ def signup(request):
 # 예외처리 알림 메세지
 def alert(request):
     message.warning(request,"이미 가입된 회원입니다.")
+
+def logout(request):
+    print(request.user)
+    print(token)
+    Refresh_token = request.user.refresh
+    token = RefreshToken(Refresh_token)
+    token.blacklist()
+    return render(request,"posts/login.html")
