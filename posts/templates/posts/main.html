@@ -16,11 +16,11 @@
                 <ul>
                     <li>
                         <div style="text-align : center;">
-                            <!-- <img src="{% static 'images/logo3.png' %}"> -->
                             <h3> {{user.phone_num}} 님 반갑습니다!</h3>
                             <h3> 권한 : {{user.job}}</h3>
                         </div>
                     </li>
+
                     <li class="active"><a href="#"><img src="{% static 'images/home.png' %}"> Overview</a>
                     </li>
                     <li><a href="#"><img src="{% static 'images/sellers.png' %}"> Sellers</a>
@@ -67,79 +67,24 @@
                                 <th scope="col">PO Name</th>
                                 <th scope="col">Address</th>
                                 <th scope="col">Collector</th>
-                                <th scope="col">QTY</th>
                                 <th scope="col">KG</th>
                                 <th scope="col">Collecting Company</th>
                             </tr>
                         </thead>
+                        {% for cursors in cursor %}
                         <tbody class="text-dark">
                             <tr>
-                                <th scope="row">12l3kj5h345lkjg654</th>
-                                <th scope="row">완료</th>
-                                <th scope="row">2022, 5, 26</th>
-                                <th scope="row">버거킹 서초점</th>
+                                <th scope="row">{{cursors.data.QR_id}}</th>
+                                <th scope="row">{{cursors.data.status.Type}}</th>
+                                <th scope="row">{{cursors.data.Status_change_time}}</th>
+                                <th scope="row">{{cursors.data.PO_id}}</th>
                                 <th scope="row">서울특별시 서초구 효령로 266 태원빌딩 4층</th>
-                                <th scope="row">홍길동</th>
-                                <th scope="row">1개</th>
-                                <th scope="row">10kg</th>
-                                <th scope="row">신흥물산</th>
+                                <th scope="row">홍길동(중상)</th>
+                                <th scope="row">{{cursors.data.Can_kg}}</th>
+                                <th scope="row">신흥물산(좌상이름)</th>
                             </tr>
                         </tbody>
-                        <tbody class="text-dark">
-                            <tr>
-                                <th scope="row">531hgchn32v4ghvn1</th>
-                                <th scope="row">수거중</th>
-                                <th scope="row">2022, 5, 25</th>
-                                <th scope="row">버거킹 강남대로점</th>
-                                <th scope="row">서울특별시 강남구 강남대로 406</th>
-                                <th scope="row">김창식</th>
-                                <th scope="row">2개</th>
-                                <th scope="row">20kg</th>
-                                <th scope="row">진하물산</th>
-                            </tr>
-                        </tbody>
-                        <tbody class="text-dark">
-                            <tr>
-                                <th scope="row">2cf34cfhg2f34chfc2h</th>
-                                <th scope="row">완료</th>
-                                <th scope="row">2022, 5, 24</th>
-                                <th scope="row">bhc치킨 충무로점</th>
-                                <th scope="row">서울특별시 중구 퇴계로 210</th>
-                                <th scope="row">김상덕</th>
-                                <th scope="row">2개</th>
-                                <th scope="row">20kg</th>
-                                <th scope="row">강산화학</th>
-                            </tr>
-                        </tbody>
-                        <tbody class="text-dark">
-                            <tr>
-                                <th scope="row">jh2gc34jhv2jh3vgghj</th>
-                                <th scope="row">완료</th>
-                                <th scope="row">2022, 5, 23</th>
-                                <th scope="row">하얀집 2호점</th>
-                                <th scope="row">서울특별시 중구 필동2가 34-1</th>
-                                <th scope="row">박기명</th>
-                                <th scope="row">4개</th>
-                                <th scope="row">40kg</th>
-                                <th scope="row">신흥물산</th>
-                            </tr>
-                        </tbody>
-
-                        <!-- <tbody class="text-dark">
-                            {% for product in product_list %}
-                            <tr>
-                                <th scope="row">#</th>
-                                <th scope="row">완료</th>
-                                <th scope="row">{{product.date}}</th>
-                                <th scope="row">{{product.PO_info.name}}</th>
-                                <th scope="row">{{product.PO_info.address}}</th>
-                                <th scope="row">{{product.PO_id}}</th>
-                                <th scope="row">{{product.Can_info.QTY}}</th>
-                                <th scope="row">{{product.Can_info.KG}}</th>
-                                <th scope="row">단석</th>
-                            </tr>
-                            {%endfor%}
-                        </tbody> -->
+                        {% endfor %}
                     </table>
                 </div>
             </div>
@@ -148,8 +93,7 @@
         <footer id="footer" class="clearfix">
             <h1><img src="{% static 'images/logo2.png' %}" alt="Recycleledger"></h1>
             <address>
-                <!-- 서울특별시 마포구 마포대로 122 프론트원 6층 Recycleledger<br> -->
-                동국대학교 신공학관<br>
+                서울특별시 마포구 마포대로 122 프론트원 6층 Recycleledger<br>
                 Copyright &copy; All right reserved
             </address>
             <div class="sns">
