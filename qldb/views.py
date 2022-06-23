@@ -98,12 +98,14 @@ def discharge_info(request):
                 update_po_document(po_body) 
             else:
                 insert_documents(qldb_driver, QLDB.PO_TABLE_NAME, po_body)
+                
+    return Response(potohash,status=status.HTTP_201_CREATED)
     
-    return HttpResponseRedirect(reverse("qldb:po_first_page"))
+    # return HttpResponseRedirect(reverse("qldb:po_first_page"))
 
 
 
-# ---------------------- 중상 폐식용유 수거 -> 수거 후 자신이 이때까지 수거 해온 폐식용유 데이터로 redirect --------------------------
+# ---------------------- 중상 폐식용유 수거  --------------------------
 
 @api_view(['PUT']) 
 def collector_pickup(request): 
@@ -118,8 +120,9 @@ def collector_pickup(request):
         print(tracking['QR_id'])
         body['Tracking']=tracking #tracking안에는 QR_id랑 Can_kg가 들어있음
         collector_modify_status(body,nowuser_pk)
-  
-    return HttpResponseRedirect(reverse("qldb:collector_com_pickup_page"))
+        
+    return Response(status=status.HTTP_201_CREATED)
+    # return HttpResponseRedirect(reverse("qldb:collector_com_pickup_page"))
 
 # ---------------------- 중상 폐식용유 정보 수정 or 거부 --------------------------
 
@@ -130,9 +133,10 @@ def collector_update_or_reject_oil_info(request):
     
     for tracking in body['Tracking']:
         collector_modify_status(tracking,nowuser_pk)
-    # potohash=hashlib.sha256(body['PO_id'].encode()).hexdigest()
     
-    return HttpResponseRedirect(reverse("qldb:collector_watch_po_oil_status_page",args=[body['PO_id']]))
+    return Response(body['PO_id'],status=status.HTTP_201_CREATED)
+    # return HttpResponseRedirect(reverse("qldb:collector_watch_po_oil_status_page",args=[body['PO_id']]))
+    
    
 
 
@@ -153,11 +157,12 @@ def com_pickup(request):
     
     User=get_user_model()
     collector=get_object_or_404(User,phone_num=body['Collector_id']) 
-    collector.profile.total_QTY=0
+    # collector.profile.total_QTY=0
     collector.profile.total_KG=0
     collector.save()
     
-    return HttpResponseRedirect(reverse("qldb:collector_com_pickup_page"))
+    return Response(status=status.HTTP_201_CREATED)
+    # return HttpResponseRedirect(reverse("qldb:collector_com_pickup_page"))
 
 
 
@@ -165,13 +170,13 @@ def com_pickup(request):
 # ---------------------- 식당 첫페이지 - 자신이 올린 폐식용유의 현재까지의 상태 --------------------------
 
 @api_view(['GET']) 
-def po_first_page(request): 
-    cursor=select_for_po(request.user.phone_num)
+def po_first_page(request,po_hash): 
+    cursor=select_for_po(po_hash)
     return Response(cursor,status=status.HTTP_200_OK)
 
 # ---------------------- 중상 첫페이지 - 등록 or 수정 상태의 오일을 가진 식당 정보 --------------------------
 @api_view(['GET'])
-def collector_first_page(request):
+def collector_first_page(request,collector_hash):
     cursor=select_po_for_collector()
     return Response(cursor,status=status.HTTP_200_OK)
     
@@ -188,8 +193,8 @@ def collector_watch_po_oil_status_page(request,po_hash):
 # ---------------------- 중상 + 좌상 현재까지 자신들의 수거 목록 리스트 -> 수거 후에 이 페이지로 넘어감   --------------------------
 
 @api_view(['GET']) 
-def collector_com_pickup_page(request):
-    cursor=select_pickup_for_collector_com_pk(request.user.phone_num)
+def collector_com_pickup_page(request,user_hash):
+    cursor=select_pickup_for_collector_com_pk(user_hash)
     return Response(cursor,status=status.HTTP_200_OK)
     
 
