@@ -2,11 +2,11 @@ from qldb.services.qldb_setting import *
 import hashlib
 
 # ---------- 식당 시점 : 해당 PO_id 존재여부 확인 함수, 있으면 True 없으면 False -------
-def get_num_for_PO_id(po_id): 
+def get_num_for_PO_id(po_hash): 
     try:
         query = "SELECT COUNT(*) as num_PO FROM PO WHERE PO_id = ?"
         # group by가 없음 
-        cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query, po_id))
+        cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query, po_hash))
         if next(cursor)['num_PO']>0:
             logger.info('PO value exist')
             return True
@@ -40,10 +40,10 @@ def get_document_ids_from_dml_results(result):
     return ret_val
 
 # ----------- 식당 시점 : 식당 첫페이지, 해당 식당이 내어둔 폐식용유의 최종 상태 확인 ----------
-def select_for_po(po_pk):
-    potohash=hashlib.sha256(po_pk.encode()).hexdigest()
+def select_for_po(po_hash):
+    # potohash=hashlib.sha256(po_pk.encode()).hexdigest()
     query="SELECT t as tracking_info, p.data.Discharge_date from Tracking as t join history(PO) as p on t.QR_id = p.data.QR_id where t.PO_id=?"
-    cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query,potohash))
+    cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query,po_hash))
     return cursor
 
 
@@ -56,10 +56,10 @@ def select_po_for_collector():
     return cursor
 
 # ------------ 중상시점 : 선택된 식당의 등록, 수정 상태의 폐식용유 상태 리스트 반환 -------
-def select_po_oil_status_for_collector(potohash):
+def select_po_oil_status_for_collector(po_hash):
     try:
         query="SELECT * from Tracking where Status['Type'] in ('등록','수정') and PO_id=?"
-        cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query,potohash))
+        cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query,po_hash))
     except Exception as e:
         logger.info('Error updating document!')
         raise e 
@@ -68,17 +68,17 @@ def select_po_oil_status_for_collector(potohash):
 
 
 # ------- 중상 좌상 시점 : 지금 까지 수거 목록 페이지 -----------
-def select_pickup_for_collector_com_pk(collector_com_pk):
+def select_pickup_for_collector_com_pk(collector_com_pk,user_hash):
    
-    collectortohash=hashlib.sha256(collector_com_pk.encode()).hexdigest()
+    # collectortohash=hashlib.sha256(collector_com_pk.encode()).hexdigest()
     query="SELECT  t.data as Tracking, p.data as PO from history(Tracking) as t join history(PO) as p on t.data.QR_id = p.data.QR_id where t.data.Status['To']=?"
-    cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query,collectortohash))
+    cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query,user_hash))
     return cursor
 
 # ------- 좌상 시점 : 수거해올 중상이 지금 까지 수한 수거 목록 리스트 페이지 --------
-def select_collector_pickup_lists(collectortohash):
+def select_collector_pickup_lists(collector_hash):
     pickquery="SELECT QR_id, Can_kg, Status['To'], Status['Type'], Status['From'], Status_change_time, PO_id from Tracking where Status['To']=? and Status['Type']='수거' "
     trackings = qldb_driver.execute_lambda(lambda executor: executor.execute_statement
                                                 (pickquery,
-                                                collectortohash))
+                                                collector_hash))
     return trackings

@@ -7,7 +7,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenVerifyView
 from .serializers import *
 from django.contrib.auth import get_user_model
 import json
-from qldb.services.select_data import select_for_po, select_po_for_collector
+# from qldb.services.select_data import select_for_po, select_po_for_collector
 from rest_framework import permissions
 # Create your views here.
 
@@ -18,14 +18,14 @@ def user_signup(request): #회원가입
     if userserializer.is_valid(raise_exception=True): #UserSerializer validate
         token = userserializer.save()
         
-        if request.data["job"]=="식당":
-            cursor=select_for_po(request.data["phone_num"])
-            cursor = [cs for cs in cursor]
-            token['list']=cursor
-        elif request.data['job']=="중상":
-            cursor=select_po_for_collector()
-            cursor = [ cs for cs in cursor]
-            token['list']=cursor
+        # if request.data["job"]=="식당":
+        #     cursor=select_for_po(request.data["phone_num"])
+        #     cursor = [cs for cs in cursor]
+        #     token['list']=cursor
+        # elif request.data['job']=="중상":
+        #     cursor=select_po_for_collector()
+        #     cursor = [ cs for cs in cursor]
+        #     token['list']=cursor
             
         return Response(token,status=status.HTTP_201_CREATED)
     return Response(status=status.HTTP_400_BAD_REQUEST)

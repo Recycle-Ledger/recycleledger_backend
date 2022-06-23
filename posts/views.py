@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.permissions import AllowAny
 from django.contrib import messages
 from qldb.views import *
-from qldb.services.select_data import *
+# from qldb.services.select_data import *
 
 
 
@@ -74,14 +74,14 @@ def signup(request):
         if userserializer.is_valid(raise_exception=True): #UserSerializer validate
             token = userserializer.save()
         
-            if data["job"]=="식당":
-                cursor=select_for_po(request.data["phone_num"])
-                cursor = [ cs for cs in cursor ]
-                token['list']=cursor
-            elif data['job']=="중상":
-                cursor=select_po_for_collector()
-                cursor = [ cs for cs in cursor ]
-                token['list']=cursor
+            # if data["job"]=="식당":
+            #     cursor=select_for_po(request.data["phone_num"])
+            #     cursor = [ cs for cs in cursor ]
+            #     token['list']=cursor
+            # elif data['job']=="중상":
+            #     cursor=select_po_for_collector()
+            #     cursor = [ cs for cs in cursor ]
+            #     token['list']=cursor
 
             return render(request,"posts/login.html")
         else:
