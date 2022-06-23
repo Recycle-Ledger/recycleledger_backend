@@ -46,7 +46,7 @@
         <section id="contents">
             <div class="row mt-5">
                 <div class="col-12">
-                    <li><a href="{% url 'users:logout' %}" class="nav-link text-left">Logout</a></li>
+                    <li><a href="{% url 'posts:logout' %}" class="nav-link text-left">Logout</a></li>
                     <table class="table1 table-light">
                         <thead class="thead-light">
                             <tr>
@@ -78,7 +78,7 @@
                                 <th scope="row">{{cursors.data.status.Type}}</th>
                                 <th scope="row">{{cursors.data.Status_change_time}}</th>
                                 <th scope="row">{{cursors.data.PO_id}}</th>
-                                <th scope="row">서울특별시 서초구 효령로 266 태원빌딩 4층</th>
+                                <th scope="row">서울특별시 서초구 효령로 266 태원빌딩 4층(po address)</th>
                                 <th scope="row">홍길동(중상)</th>
                                 <th scope="row">{{cursors.data.Can_kg}}</th>
                                 <th scope="row">신흥물산(좌상이름)</th>
