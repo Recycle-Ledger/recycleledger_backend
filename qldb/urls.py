@@ -11,13 +11,13 @@ urlpatterns = [
     
     # ------------- 식당 --------------
     # 첫페이지(GET)
-    path('po_first_page', po_first_page, name='po_first_page'), 
+    path('po_first_page/<str:po_hash>', po_first_page, name='po_first_page'), 
     # 폐식용유 등록 (POST) + 거부 수정(PUT)
     path('discharge_info', discharge_info, name='discharge_info'),
     
     # ------------- 중상 --------------
     # 첫페이지(GET)
-    path('collector_first_page', collector_first_page, name='collector_first_page'), 
+    path('collector_first_page/<str:collector_hash>', collector_first_page, name='collector_first_page'), 
     # 수거 (PUT)
     path('collector_pickup', collector_pickup, name='collector_pickup'),
     # 수정 or 거부 (PUT)
@@ -35,7 +35,7 @@ urlpatterns = [
     
     # ------------- 좌상 + 중상 --------------
     # 중상 좌상 수거 후 자신 수거 내역 페이지(GET)
-    path('collector_com_pickup_page', collector_com_pickup_page, name='collector_com_pickup_page'), 
+    path('collector_com_pickup_page/<str:user_hash>', collector_com_pickup_page, name='collector_com_pickup_page'), 
   
   
   
