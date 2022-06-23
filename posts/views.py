@@ -6,6 +6,8 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import AllowAny
 from django.contrib import messages
+from qldb.views import *
+from qldb.services.select_data import *
 
 
 
@@ -30,10 +32,18 @@ def main(request):
             if job=="좌상":
                 return render(request,"posts/main_c.html",{"user" : serializer_class['user']})
             elif job=="환경부":
-                return render(request,"posts/main.html",{"user" : serializer_class['user']})
+                query = "SELECT * from history(Tracking)"
+                cursor = qldb_driver.execute_lambda(lambda executor: executor.execute_statement(query))
+                return render(request,"posts/main.html",{"user" : serializer_class['user'],"cursor":cursor})
             else:
                 return render(request,"posts/main_j.html",{"user" : serializer_class['user']})
- 
+
+@api_view(['GET']) 
+def po_first_page(request): 
+    cursor=select_for_po(request.user.phone_num)
+    return Response(cursor,status=status.HTTP_200_OK)
+
+
 def login(request):
     return render(request,"posts/login.html")    
 
@@ -63,13 +73,13 @@ def signup(request):
         if userserializer.is_valid(raise_exception=True): #UserSerializer validate
             token = userserializer.save()
         
-            if request.data["job"]=="식당":
+            if data["job"]=="식당":
                 cursor=select_for_po(request.data["phone_num"])
-                cursor = { cs for cs in cursor}
+                cursor = [ cs for cs in cursor ]
                 token['list']=cursor
-            elif request.data['job']=="중상":
+            elif data['job']=="중상":
                 cursor=select_po_for_collector()
-                cursor = { cs for cs in cursor}
+                cursor = [ cs for cs in cursor ]
                 token['list']=cursor
 
             return render(request,"posts/login.html")
