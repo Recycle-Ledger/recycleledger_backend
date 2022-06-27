@@ -192,13 +192,13 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, "posts", "static")]
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-# AWS 세팅 
-AWS_ACCESS_KEY_ID = get_secret("AWS_ACCESS_KEY")
-AWS_SECRET_ACCESS_KEY = get_secret("AWS_SECRET_ACCESS_KEY")
-AWS_REGION = get_secret("AWS_DEFAULT_REGION")
-# AWS_ENDPOINT_URL= get_secret("AWS_ENDPOINT_URL")
-# AWS_SESSION_TOKEN
-# AWS_PROFILE
+# # AWS 세팅 
+# AWS_ACCESS_KEY_ID = get_secret("AWS_ACCESS_KEY")
+# AWS_SECRET_ACCESS_KEY = get_secret("AWS_SECRET_ACCESS_KEY")
+# AWS_REGION = get_secret("AWS_DEFAULT_REGION")
+# # AWS_ENDPOINT_URL= get_secret("AWS_ENDPOINT_URL")
+# # AWS_SESSION_TOKEN
+# # AWS_PROFILE
 
 
 # MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

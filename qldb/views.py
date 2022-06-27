@@ -206,6 +206,11 @@ def com_watch_collector_pickup_lists(request,collector_hash):
     
     return Response(trackings,status=status.HTTP_200_OK)
 
+# simpleion.loads는 ion 텍스트 -> ion개체
+# simpleion.dump는 ion 객체 생성
+# loads는 텍스트를 ion개체로 해서 dic처럼씀, dumps는 딕셔너리를 담고 loads로 dic처럼씀
+# ex) loads(텍스트) or loads(dumps(딕셔너리))
+
 
 # 테이블 수 체크
 # @api_view(['POST'])

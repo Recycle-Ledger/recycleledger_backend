@@ -5,6 +5,7 @@ from logging import basicConfig, getLogger, INFO
 from qldb.ledger import *
 from pyqldb.driver.qldb_driver import QldbDriver
 import uuid
+from pyqldb.config.retry_config import RetryConfig
 
 from amazon.ion.simple_types import IonPyBool, IonPyBytes, IonPyDecimal, IonPyDict, IonPyFloat, IonPyInt, IonPyList, \
     IonPyNull, IonPySymbol, IonPyText, IonPyTimestamp
@@ -22,21 +23,22 @@ IonValue = (IonPyBool, IonPyBytes, IonPyDecimal, IonPyDict, IonPyFloat, IonPyInt
 
 ledger_name=QLDB.LEDGER_NAME
 
-access_key=getattr(settings,'AWS_ACCESS_KEY_ID')
-secret_access_key=getattr(settings,'AWS_SECRET_ACCESS_KEY')
-region_name=getattr(settings,'AWS_REGION')
+# access_key=getattr(settings,'AWS_ACCESS_KEY_ID')
+# secret_access_key=getattr(settings,'AWS_SECRET_ACCESS_KEY')
+# region_name=getattr(settings,'AWS_REGION')
 
-session=boto3.session.Session(aws_access_key_id=access_key, 
-                              aws_secret_access_key=secret_access_key, 
-                              region_name=region_name)
+# session=boto3.session.Session(aws_access_key_id=access_key, 
+#                               aws_secret_access_key=secret_access_key, 
+#                               region_name=region_name)
 
-qldb_client = session.client(
+qldb_client = boto3.client(
     'qldb'
     )
-
+retry_config = RetryConfig(retry_limit=2)
 qldb_driver = QldbDriver(
     ledger_name=ledger_name, 
-    boto3_session=session
+    # boto3_session=session,
+    retry_config=retry_config #안되면 2번 반복
     )
 
 LEDGER_CREATION_POLL_PERIOD_SEC = 10
