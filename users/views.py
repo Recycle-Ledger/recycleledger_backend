@@ -37,7 +37,6 @@ class MyTokenObtainPairView(TokenObtainPairView):
 @api_view(['PUT'])    
 # @permission_classes([IsAuthenticated]) #회원으로 인증된 요청 한해서 view 호출
 def user_info_update(request): #회원정보 수정
-    serializer_class=MyTokenObtainPairSerializer
     body=json.loads(request.body)
     User=get_user_model()
     me=get_object_or_404(User,phone_num=body["phone_num"])
